@@ -1,0 +1,16 @@
+{
+  "name": "guided-ai-terminal-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js terminal service (node-pty + Socket.io) for guided-AI-coding",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "node-pty": "^1.0.0",
+    "socket.io": "^4.8.0"
+  }
+}
