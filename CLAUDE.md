@@ -17,7 +17,7 @@ cd frontend && pnpm lint         # ESLint
 
 # All three at once
 bash scripts/dev.sh              # Local dev (backend + terminal + frontend)
-bash scripts/prod.sh             # Prod mode with Vietnix tunnels
+bash scripts/prod.sh             # Prod mode (tunnels disabled — use Tailscale or local only)
 ```
 Package managers: **pnpm** (frontend), **uv** (backend), **npm** (terminal-service).
 
@@ -34,24 +34,26 @@ backend/                    Python FastAPI (port 17066)
   app/main.py               FastAPI app, CORS, /health
   app/config.py             Settings (port, CORS origins from .env)
   app/api/commands.py        POST /api/commands — terminal command execution (dormant)
-  app/api/chat.py            POST /api/chat — advisor chatbot
-  app/services/              Business logic (mock_commands, advisor_responses)
+  app/api/chat.py            POST /api/chat — tutor agent (Grok LLM)
+  app/services/tutor_agent.py Power Agent pattern + ReadTerminal tool
+  app/services/              Business logic
   app/templates/             HTML templates (tic_tac_toe.py)
 frontend/                   Next.js 16 + React 19 + Tailwind + shadcn/ui
   app/page.tsx               Root page — two-panel layout
   components/                left-panel, right-panel, interactive-terminal + shadcn/ui
-  lib/api.ts                 API client (sendChatMessage)
+  lib/api.ts                 API client (sendChatMessage, sendTerminalCommand, readTerminalOutput)
   hooks/                     use-mobile, use-toast
 docs/kickoff/                PRD + frontend spec
 ```
 
-**Current state:** V2 — live terminal via xterm.js + node-pty, advisor chatbot via FastAPI.
+**Current state:** V3 — live terminal + LLM tutor (Grok via xAI) with terminal awareness.
 
-## Version Roadmap
-- **V1** (done): Build Tic-Tac-Toe in <15 min via mock terminal + advisor
-- **V2** (current): Live terminal (xterm.js + node-pty) replaces mock terminal
-- **V3**: Load CSV, show charts — real data dashboard
-- **V4** (optional): Multi-page apps, routing, template gallery
+## Product Direction & Roadmap
+Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memory/product-vision.md](lt-memory/product-vision.md) for full vision, roadmap, and backlog.
+
+## Workflow Rules
+- **Commit before new sprint:** Always commit all changes from the current sprint before starting the next one. This ensures clean revert points via Git.
+- **Branch when risky:** Consider creating a new branch for large/risky sprints so the main branch stays safe.
 
 ## Key Conventions
 - All components use `'use client'` directive (client-side rendering)
@@ -66,6 +68,7 @@ docs/kickoff/                PRD + frontend spec
 2. PTY output → Socket.io `data` event → xterm.js renders in browser
 3. User chats in RightPanel → `sendChatMessage()` (POST /api/chat) → FastAPI advisor reply
 4. Flow control: client sends `ack` events, server pauses PTY if watermark > 100KB
+5. Chat `$ cmd` → detect prefix → POST /api/terminals/default/send → wait 5s → GET /api/terminals/default/read → display output in chat
 
 ## Pitfalls
 Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky areas.
@@ -74,3 +77,4 @@ Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky area
 `lt-memory/` uses progressive disclosure — this file stays short with summaries, detail files are read on-demand:
 - `pitfalls.md` — Known gotchas and things that break unexpectedly
 - `architecture.md` — Detailed component interactions, mock system design, and iframe sandbox details
+- `product-vision.md` — Multi-agent architecture vision, roadmap, and backlog

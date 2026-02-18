@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const cors = require('cors');
 const pty = require('node-pty');
 const { Server } = require('socket.io');
 
@@ -14,6 +15,7 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
+app.use(cors());
 app.use(express.json());
 
 // Named terminal sessions: { name -> { pty, outputBuffer, sockets, watermark } }

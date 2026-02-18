@@ -1,15 +1,14 @@
 # Architecture Details
 
-## Component Hierarchy
+## Component Hierarchy (V3)
 
 ```
 RootLayout (app/layout.tsx)
-  └── Page (app/page.tsx) — manages appContent state
+  └── Page (app/page.tsx)
         ├── LeftPanel (70%)
-        │     ├── Terminal — mock bash, calls mockTerminalCommands()
-        │     └── AppPreview — iframe, receives HTML string
+        │     └── InteractiveTerminal — xterm.js + Socket.io → terminal-service (node-pty)
         └── RightPanel (30%)
-              └── Chat UI — keyword-matched advisor responses
+              └── Chat UI → POST /api/chat → TutorAgent (Grok LLM + ReadTerminal tool)
 ```
 
 ## Mock Systems
@@ -32,8 +31,22 @@ RootLayout (app/layout.tsx)
 - **shadcn/ui** — 49 components installed, only Button and Input actively used
 - **Fonts**: Geist + Geist_Mono (loaded but assigned to unused vars with _ prefix)
 
-## What Needs to Change for V2+
-- Replace `getAdvisorResponse()` keyword matching with real LLM API call
-- Replace `mockTerminalCommands()` with actual code execution or richer simulation
-- The API route `/api/chat` is ready to be the integration point for a real backend
-- AppPreview iframe can receive any HTML — V2/V3 just need different template strings
+## Chat ↔ Terminal Integration (Sprint 3)
+- RightPanel detects `$ ` prefix in chat input → calls `sendTerminalCommand()` → waits 5s → calls `readTerminalOutput(5)` → strips ANSI → shows output as code block
+- `TERMINAL_URL` in `lib/api.ts` uses `window.location.hostname:17076` for dynamic host resolution (works for both localhost and remote/tunneled access)
+- Terminal-service REST endpoints: POST `/api/terminals/:name/send`, GET `/api/terminals/:name/read?lines=N`
+
+## Tutor Agent (V3)
+- `backend/app/services/tutor_agent.py` — Power Agent pattern (DO NOT modify system prompt or tool docstrings)
+- Model: `grok-4-fast-non-reasoning` (xAI). API key from `~/dev/.env` via python-dotenv.
+- System prompt: copied exactly from Power Agent Creator skill
+- Specialization: `TUTOR_PROMPT.md` injected as a HumanMessage after system prompt
+- Tool: `ReadTerminal` — calls terminal-service REST API, strips ANSI, returns clean text
+- Singleton pattern: `get_tutor_agent()` returns a shared instance (conversation persists across requests within a process)
+- Tutor prompt + student progress loaded from `tutor/TUTOR_PROMPT.md` + `tutor/memory/progress.md`
+
+## What Needs to Change for V4+
+- Add `SendTerminal` tool so tutor can demo commands in the left panel
+- Add memory write tool so tutor can persist progress to `tutor/memory/`
+- Consider streaming responses instead of waiting for full completion
+- Reduce the 5s fixed wait for `$ ` prefix terminal output to something adaptive

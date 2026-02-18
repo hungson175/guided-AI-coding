@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    #status {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      min-height: 2rem;
+      color: #94a3b8;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 120px);
+      grid-template-rows: repeat(3, 120px);
+      gap: 6px;
+      background: #334155;
+      padding: 6px;
+      border-radius: 12px;
+    }
+
+    .cell {
+      background: #1e293b;
+      border: none;
+      border-radius: 8px;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .cell:hover:not(.taken) {
+      background: #273548;
+    }
+
+    .cell.taken {
+      cursor: default;
+    }
+
+    .cell.x { color: #38bdf8; }
+    .cell.o { color: #f472b6; }
+
+    .cell.win {
+      background: #1e3a5f;
+      animation: pop 0.3s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    #restart {
+      margin-top: 1.5rem;
+      padding: 0.6rem 2rem;
+      font-size: 1rem;
+      border: 2px solid #475569;
+      border-radius: 8px;
+      background: transparent;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    #restart:hover {
+      background: #1e293b;
+      border-color: #64748b;
+    }
+
+    #score {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: #64748b;
+    }
+
+    #score span { font-weight: 600; }
+    #score .x-score { color: #38bdf8; }
+    #score .o-score { color: #f472b6; }
+  </style>
+</head>
+<body>
+  <h1>Tic-Tac-Toe</h1>
+  <div id="status">X's turn</div>
+  <div id="board"></div>
+  <button id="restart">Restart</button>
+  <div id="score">
+    <span class="x-score">X: 0</span> &mdash;
+    <span class="o-score">O: 0</span> &mdash;
+    Draws: <span id="draws">0</span>
+  </div>
+
+  <script>
+    const WINS = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    let board = Array(9).fill('');
+    let turn = 'X';
+    let gameOver = false;
+    let score = { X: 0, O: 0, draw: 0 };
+
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const restartBtn = document.getElementById('restart');
+
+    function render() {
+      boardEl.innerHTML = '';
+      board.forEach((val, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'cell' + (val ? ' taken ' + val.toLowerCase() : '');
+        btn.textContent = val;
+        btn.addEventListener('click', () => play(i));
+        boardEl.appendChild(btn);
+      });
+      updateScore();
+    }
+
+    function play(i) {
+      if (gameOver || board[i]) return;
+      board[i] = turn;
+      const win = checkWin(turn);
+      if (win) {
+        gameOver = true;
+        score[turn]++;
+        statusEl.textContent = turn + ' wins!';
+        render();
+        highlightWin(win);
+        return;
+      }
+      if (board.every(c => c)) {
+        gameOver = true;
+        score.draw++;
+        statusEl.textContent = "It's a draw!";
+        render();
+        return;
+      }
+      turn = turn === 'X' ? 'O' : 'X';
+      statusEl.textContent = turn + "'s turn";
+      render();
+    }
+
+    function checkWin(player) {
+      return WINS.find(combo => combo.every(i => board[i] === player)) || null;
+    }
+
+    function highlightWin(combo) {
+      const cells = boardEl.querySelectorAll('.cell');
+      combo.forEach(i => cells[i].classList.add('win'));
+    }
+
+    function updateScore() {
+      document.querySelector('.x-score').textContent = 'X: ' + score.X;
+      document.querySelector('.o-score').textContent = 'O: ' + score.O;
+      document.getElementById('draws').textContent = score.draw;
+    }
+
+    function restart() {
+      board = Array(9).fill('');
+      turn = 'X';
+      gameOver = false;
+      statusEl.textContent = "X's turn";
+      render();
+    }
+
+    restartBtn.addEventListener('click', restart);
+    render();
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ import React from "react"
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { sendChatMessage } from '@/lib/api'
+import { sendChatMessage, sendTerminalCommand, readTerminalOutput } from '@/lib/api'
 
 interface Message {
   id: string
@@ -33,21 +33,63 @@ export function RightPanel() {
     scrollToBottom()
   }, [messages])
 
+  function isTerminalCommand(text: string): string | null {
+    const trimmed = text.trim()
+    if (trimmed.startsWith('$ ')) return trimmed.slice(2)
+    return null
+  }
+
+  function stripAnsi(text: string): string {
+    return text
+      .replace(/\x1b\][^\x07]*\x07/g, '')       // OSC sequences (title sets)
+      .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')   // CSI sequences (colors, cursor, bracketed paste)
+      .replace(/\x1b[()][0-9A-B]/g, '')          // charset sequences
+      .replace(/\r/g, '')                         // carriage returns
+  }
+
+  const addMessage = (type: 'user' | 'advisor', text: string) => {
+    setMessages((prev) => [...prev, {
+      id: Date.now().toString() + Math.random(),
+      type,
+      text,
+    }])
+  }
+
+  const handleTerminalCommand = async (command: string) => {
+    addMessage('advisor', `Sending to terminal: \`${command}\``)
+    try {
+      await sendTerminalCommand(command)
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+      const output = await readTerminalOutput(5)
+      const clean = stripAnsi(output).trim()
+      addMessage('advisor', `Terminal output:\n\`\`\`\n${clean}\n\`\`\``)
+    } catch {
+      addMessage('advisor', 'Failed to communicate with the terminal. Is it running?')
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim()) return
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
       text: input,
     }
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = input
     setInput('')
     setIsLoading(true)
 
+    const command = isTerminalCommand(currentInput)
+    if (command) {
+      await handleTerminalCommand(command)
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const response = await sendChatMessage(input)
+      const response = await sendChatMessage(currentInput)
       const advisorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'advisor',
@@ -125,7 +167,7 @@ export function RightPanel() {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          💡 Try asking: "How do I run the app?" or "What should I do next?"
+          💡 Prefix with $ to run in terminal (e.g. "$ ls") or ask a question
         </p>
       </div>
     </div>
