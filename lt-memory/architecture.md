@@ -1,52 +1,76 @@
 # Architecture Details
 
-## Component Hierarchy (V3)
+## Tmux Team Setup
 
 ```
-RootLayout (app/layout.tsx)
-  └── Page (app/page.tsx)
-        ├── LeftPanel (70%)
-        │     └── InteractiveTerminal — xterm.js + Socket.io → terminal-service (node-pty)
-        └── RightPanel (30%)
-              └── Chat UI → POST /api/chat → TutorAgent (Grok LLM + ReadTerminal tool)
+tmux session: guided_ai_coding
+┌─────────────────────────────────┬──────────────────────┐
+│  Pane 0 — STUDENT (70%)        │  Pane 1 — TUTOR (30%) │
+│  Regular Claude Code            │  Claude Code + prompt  │
+│  Student's workspace            │  Coach Son persona     │
+└─────────────────────────────────┴──────────────────────┘
 ```
 
-## Mock Systems
+### Setup Script: `scripts/setup-tutor.sh`
+1. Creates tmux session `guided_ai_coding`
+2. Splits 70/30 horizontal
+3. Sets `@role_name` on each pane (STUDENT, TUTOR) for tm-send
+4. Starts Claude Code in both panes
+5. Waits 15s for startup
+6. Creates resolved tutor prompt with actual pane IDs (`prompts/.TUTOR_PROMPT_RESOLVED.md`)
+7. Sends `/ecp prompts/.TUTOR_PROMPT_RESOLVED.md` to tutor pane
 
-### Terminal (`lib/mock-commands.ts`)
-- Commands: help, mkdir, touch, cd, ls, run, scaffold, build, clear, version
-- `run`, `npm start`, `scaffold` all return the same Tic-Tac-Toe HTML
-- The Tic-Tac-Toe game is a 153-line HTML string embedded directly in the file
-- Game: 3x3 grid, X/O turns, 8 winning conditions, reset button, purple gradient UI
+### Pane ID Injection
+The tutor prompt (`prompts/TUTOR_PROMPT.md`) uses placeholders:
+- `${STUDENT_PANE}` — replaced with actual tmux pane ID (e.g., `%5`)
+- `${TUTOR_PANE}` — replaced with actual tmux pane ID (e.g., `%6`)
+- `${PROJECT_ROOT}` — replaced with absolute project path
 
-### Advisor (`lib/advisor-responses.ts`)
-- 20+ hardcoded responses keyed by substring match
-- Match order: exact match -> partial substring match -> pattern match (what/how, play/game, etc.) -> default fallback
-- No LLM — pure string matching
+The setup script creates `.TUTOR_PROMPT_RESOLVED.md` with these replaced, then loads it via `/ecp`.
 
-## Tech Stack Details
-- **Next.js 16.1.6** with App Router
-- **React 19** (client components only — all use `'use client'`)
-- **Tailwind CSS 3.4** with CSS variables for theming (dark mode via class strategy)
-- **shadcn/ui** — 49 components installed, only Button and Input actively used
-- **Fonts**: Geist + Geist_Mono (loaded but assigned to unused vars with _ prefix)
+## Communication Patterns
 
-## Chat ↔ Terminal Integration (Sprint 3)
-- RightPanel detects `$ ` prefix in chat input → calls `sendTerminalCommand()` → waits 5s → calls `readTerminalOutput(5)` → strips ANSI → shows output as code block
-- `TERMINAL_URL` in `lib/api.ts` uses `window.location.hostname:17076` for dynamic host resolution (works for both localhost and remote/tunneled access)
-- Terminal-service REST endpoints: POST `/api/terminals/:name/send`, GET `/api/terminals/:name/read?lines=N`
+### tm-send (Inter-pane messaging)
+```bash
+# Student sends to Tutor
+tm-send TUTOR "I'm done with the task"
 
-## Tutor Agent (V3)
-- `backend/app/services/tutor_agent.py` — Power Agent pattern (DO NOT modify system prompt or tool docstrings)
-- Model: `grok-4-fast-non-reasoning` (xAI). API key from `~/dev/.env` via python-dotenv.
-- System prompt: copied exactly from Power Agent Creator skill
-- Specialization: `TUTOR_PROMPT.md` injected as a HumanMessage after system prompt
-- Tool: `ReadTerminal` — calls terminal-service REST API, strips ANSI, returns clean text
-- Singleton pattern: `get_tutor_agent()` returns a shared instance (conversation persists across requests within a process)
-- Tutor prompt + student progress loaded from `tutor/TUTOR_PROMPT.md` + `tutor/memory/progress.md`
+# Tutor sends to Student
+tm-send STUDENT "Try running ls to see your files"
 
-## What Needs to Change for V4+
-- Add `SendTerminal` tool so tutor can demo commands in the left panel
-- Add memory write tool so tutor can persist progress to `tutor/memory/`
-- Consider streaming responses instead of waiting for full completion
-- Reduce the 5s fixed wait for `$ ` prefix terminal output to something adaptive
+# From outside tmux
+tm-send -s guided_ai_coding TUTOR "message"
+```
+
+tm-send uses `@role_name` pane options to find the target pane. `PANE_ROLES.md` in `docs/tmux/guided_ai_coding/` enables auto-detection.
+
+### Tutor Observation (capture-pane)
+```bash
+# Tutor reads student's terminal (last 30 lines)
+tmux capture-pane -t <STUDENT_PANE_ID> -p -S -30
+
+# More context (last 50 lines)
+tmux capture-pane -t <STUDENT_PANE_ID> -p -S -50
+```
+
+The tutor uses this to verify student's work (verification protocol) and observe progress.
+
+## Tutor Agent
+
+### Prompt: `prompts/TUTOR_PROMPT.md`
+- Persona: Coach Son — Vietnamese-speaking coding tutor
+- Student: Anh Tuong — CEO with zero programming experience
+- Teaching: Progressive lessons (terminal basics → Claude Code → building projects)
+- Verification: Reads student's pane output to check work
+
+### Memory: `tutor/memory/`
+- `progress.md` — Where the student left off (lesson, step, what's next)
+- `lessons-learned.md` — Teaching notes (what works, what doesn't)
+- Tutor reads `progress.md` on every session start to resume correctly
+
+## Retired Components (V1-V3 Web App)
+The following are no longer active but remain in the repo:
+- `frontend/` — Next.js 16 + React 19 + xterm.js (two-panel web UI)
+- `backend/` — FastAPI + Grok LLM tutor agent + ReadTerminal tool
+- `terminal-service/` — Node.js + node-pty + Socket.io (terminal sidecar)
+- `scripts/dev.sh`, `scripts/prod.sh` — Web app startup scripts

@@ -2,51 +2,56 @@
 
 ## Commands
 ```bash
-# Backend (FastAPI)
-cd backend && uv sync                                    # Install deps
-cd backend && uv run uvicorn app.main:app --port 17066 --reload  # Dev server
+# Start the tmux team (STUDENT + TUTOR)
+bash scripts/setup-tutor.sh
 
-# Terminal Service (Node.js)
-cd terminal-service && npm install                       # Install deps
-cd terminal-service && node server.js                    # Dev server (port 17076)
+# Attach to running session
+tmux attach -t guided_ai_coding
 
-# Frontend (Next.js)
-cd frontend && pnpm dev          # Start dev server
-cd frontend && pnpm build        # Production build
-cd frontend && pnpm lint         # ESLint
+# Communication (inside the session)
+tm-send TUTOR "your message"       # Student → Tutor
+tm-send STUDENT "your message"     # Tutor → Student
 
-# All three at once
-bash scripts/dev.sh              # Local dev (backend + terminal + frontend)
-bash scripts/prod.sh             # Prod mode (tunnels disabled — use Tailscale or local only)
+# Communication (from outside tmux)
+tm-send -s guided_ai_coding TUTOR "your message"
+tm-send -s guided_ai_coding STUDENT "your message"
 ```
-Package managers: **pnpm** (frontend), **uv** (backend), **npm** (terminal-service).
 
 ## Architecture
-**AI Software Advisor** — a learning product that teaches non-technical users (CEOs/business owners) to build software by talking to an AI advisor.
+**AI Software Advisor** — a learning product that teaches non-technical users (CEOs/business owners) to build software by working alongside an AI tutor.
 
-Two-panel layout: Left (70%) = live xterm.js terminal, Right (30%) = AI advisor chatbot.
+Two-pane tmux layout: Left (70%) = student's Claude Code, Right (30%) = tutor Claude Code (Coach Son).
 
 ```
-terminal-service/           Node.js sidecar (port 17076)
-  package.json              express, socket.io, node-pty
-  server.js                 Express + Socket.io + node-pty → spawns bash PTY
-backend/                    Python FastAPI (port 17066)
-  app/main.py               FastAPI app, CORS, /health
-  app/config.py             Settings (port, CORS origins from .env)
-  app/api/commands.py        POST /api/commands — terminal command execution (dormant)
-  app/api/chat.py            POST /api/chat — tutor agent (Grok LLM)
-  app/services/tutor_agent.py Power Agent pattern + ReadTerminal tool
-  app/services/              Business logic
-  app/templates/             HTML templates (tic_tac_toe.py)
-frontend/                   Next.js 16 + React 19 + Tailwind + shadcn/ui
-  app/page.tsx               Root page — two-panel layout
-  components/                left-panel, right-panel, interactive-terminal + shadcn/ui
-  lib/api.ts                 API client (sendChatMessage, sendTerminalCommand, readTerminalOutput)
-  hooks/                     use-mobile, use-toast
-docs/kickoff/                PRD + frontend spec
+┌─────────────────────────────────┬──────────────────────┐
+│  STUDENT (Claude Code)          │  TUTOR (Claude Code)  │
+│  Pane 0 — 70% width            │  Pane 1 — 30% width   │
+│                                 │                       │
+│  - Regular Claude Code          │  - Claude Code with   │
+│  - Student codes here           │    tutor prompt       │
+│  - Runs commands                │  - Observes left pane │
+│  - Builds projects              │  - Teaches via chat   │
+│                                 │  - Uses tm-send       │
+└─────────────────────────────────┴──────────────────────┘
+         tmux session: guided_ai_coding
 ```
 
-**Current state:** V3 — live terminal + LLM tutor (Grok via xAI) with terminal awareness.
+```
+scripts/setup-tutor.sh         Tmux team setup (creates session, starts both Claude Code instances)
+prompts/TUTOR_PROMPT.md        Tutor role prompt (Coach Son persona, teaching workflow)
+tutor/memory/                  Tutor's persistent memory (progress.md, lessons-learned.md)
+docs/tmux/guided_ai_coding/   PANE_ROLES.md for tm-send auto-detection
+lt-memory/                     Long-term architecture memory
+```
+
+**Current state:** Tmux team with 2 Claude Code instances — student workspace + AI tutor (Coach Son).
+
+### Retired (not deleted)
+The following were part of the V1-V3 web app approach and are no longer active:
+- `frontend/` — Next.js app
+- `backend/` — FastAPI app
+- `terminal-service/` — Node.js terminal sidecar
+- `scripts/dev.sh`, `scripts/prod.sh` — Old web app startup scripts
 
 ## Product Direction & Roadmap
 Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memory/product-vision.md](lt-memory/product-vision.md) for full vision, roadmap, and backlog.
@@ -55,20 +60,10 @@ Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memor
 - **Commit before new sprint:** Always commit all changes from the current sprint before starting the next one. This ensures clean revert points via Git.
 - **Branch when risky:** Consider creating a new branch for large/risky sprints so the main branch stays safe.
 
-## Key Conventions
-- All components use `'use client'` directive (client-side rendering)
-- Props interfaces defined inline above component
-- shadcn/ui for UI primitives (`@/components/ui/`)
-- Path alias: `@/` maps to project root
-- CSS: Tailwind with CSS variables for theming (`hsl(var(--background))`)
-- `cn()` utility from `lib/utils.ts` for class merging
-
-## Data Flow
-1. User types in xterm.js terminal → Socket.io `data` event → terminal-service (node-pty) → bash PTY
-2. PTY output → Socket.io `data` event → xterm.js renders in browser
-3. User chats in RightPanel → `sendChatMessage()` (POST /api/chat) → FastAPI advisor reply
-4. Flow control: client sends `ack` events, server pauses PTY if watermark > 100KB
-5. Chat `$ cmd` → detect prefix → POST /api/terminals/default/send → wait 5s → GET /api/terminals/default/read → display output in chat
+## Communication Patterns
+- **Student → Tutor**: `tm-send TUTOR "question or update"`
+- **Tutor → Student**: `tm-send STUDENT "guidance or instruction"`
+- **Tutor observes student**: `tmux capture-pane -t <student_pane_id> -p -S -30`
 
 ## Pitfalls
 Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky areas.
@@ -76,5 +71,5 @@ Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky area
 ## Long-Term Memory
 `lt-memory/` uses progressive disclosure — this file stays short with summaries, detail files are read on-demand:
 - `pitfalls.md` — Known gotchas and things that break unexpectedly
-- `architecture.md` — Detailed component interactions, mock system design, and iframe sandbox details
+- `architecture.md` — Tmux team setup, communication patterns, pane architecture
 - `product-vision.md` — Multi-agent architecture vision, roadmap, and backlog
