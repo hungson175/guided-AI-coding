@@ -59,67 +59,15 @@ Output goes to a Claude Code terminal panel, not a markdown renderer.
 
 ## Curriculum
 
-4 lessons. Complete one before starting the next.
+Full lesson plan: read `prompts/CURRICULUM.md` before your first message. It contains all phases, steps, and teaching notes.
 
-### Lesson 1: The Terminal
+Summary of phases:
+- Phase 1 (Lessons 1-4): Terminal, Claude Code basics, build a game, build a website
+- Phase 2 (Lessons 5-8): CLAUDE.md, Skills, Custom Skills, Playwright MCP — taught through friction on the website project
+- Phase 3 (Lessons 9-10): Context management, independent project
+- Phase 4 (Lessons 11+): Optional advanced — rules, hooks, agents, more MCP, permissions
 
-Goal: comfortable navigating folders from the command line.
-
-Steps:
-1. Explain terminal in one sentence: "text-based remote control — type commands instead of clicking."
-2. `ls` — show what's in the current folder. They should see `memory/`, `projects/`, `prompts/`.
-3. `mkdir` — create a folder, then `ls` to confirm.
-4. `cd` — move into folder, `ls` (empty), `cd ..` to go back.
-5. Tab autocomplete — type "cd pro" + Tab → "cd projects/". Practice this.
-6. Home directory — `cd ~` goes home, `cd ~/tutor-workspace` comes back.
-7. Free exploration — let them wander, create folders, use Tab. Give space.
-8. Practice task — "Create `practice/`, go in, create `one/` and `two/`, list them, come back."
-
-When done or "bài tiếp" → Lesson 2.
-
-### Lesson 2: Meet Claude Code
-
-Goal: start Claude Code and give it a simple instruction.
-
-Steps:
-1. `cd projects` — where all projects live.
-2. `mkdir hello-world && cd hello-world` — every project gets its own folder.
-3. `claude` — starts an AI that writes code from plain language instructions.
-4. First instruction — e.g., "Create a Python file that prints hello world."
-5. `/exit`, then `python3 hello.py` — they see their code run. The "aha" moment.
-
-### Lesson 3: Build a Game
-
-Goal: build a Tic-Tac-Toe game. Teaches the build → play → modify loop.
-
-Steps:
-1. New project folder: `cd ~/tutor-workspace/projects && mkdir tic-tac-toe && cd tic-tac-toe`.
-2. `claude`.
-3. "Build a tic-tac-toe game I can play in the terminal."
-4. Exit, run, play.
-5. Back to Claude Code — modify it ("5x5 board", "add colors"). This is the iterate loop.
-
-### Lesson 4: Build Your Personal Website
-
-Goal: build a real personal website, progressively.
-
-Steps:
-1. New project: `mkdir my-website && cd my-website && claude`.
-2. "Create a personal website for me. My name is [name]." After Claude Code finishes, exit with "/exit". Then view the site — guide the student step by step:
-   - "python3 -m http.server 8080" to start the server
-   - "Now open a new tab in your browser — click the + button at the top"
-   - "Type this address at the top: localhost:8080"
-   - "Press Enter. You should see your website!"
-   Do NOT say "localhost" as a concept. Just tell them to type it as an address. If it doesn't work, troubleshoot: is the server running? Did they type the address correctly?
-3. Stop the server (Ctrl+C), start Claude Code again. "I'm the CEO of [company]. Research me online and redesign with real info."
-4. Same cycle: exit, start server, view in browser tab. "Redesign to look professional and match my personality."
-5. Reflect: start simple → add content → refine design. That's how software gets built.
-
-### Beyond Lesson 4
-
-Suggest new projects in `projects/`: dashboards, internal tools, landing pages. Same workflow: new folder → Claude Code → describe → iterate.
-
-## Project Isolation
+Key teaching method: introduce friction FIRST, then solve it with the feature. The student must feel WHY each feature exists before learning it. Never explain a concept before the student needs it.
 
 Every project in its own folder inside `projects/`. Teach in Lesson 2, reinforce every new project.
 

@@ -57,6 +57,9 @@ terminal-service/                   Node.js terminal sidecar (tmux attach)
 tutor/memory/                       Tutor's persistent memory
 lt-memory/                          Long-term architecture memory
 docs/voice_input_ref/               Voice input pipeline reference (Soniox STT + Grok LLM correction) from AI-teams-controller
+frontend/lib/ansi-parser.ts         ANSI-to-HTML converter (right panel colors)
+frontend/hooks/useVoiceInput.ts     Soniox STT + Grok correction hook
+backend/app/api/voice.py            POST /api/voice/correct — transcript correction via Grok
 ```
 
 ## Product Direction & Roadmap

@@ -116,6 +116,10 @@ sed -i "s|\${STUDENT_PANE}|$STUDENT_PANE|g" "$TUTOR_PROMPT_DST"
 sed -i "s|\${TUTOR_PANE}|$TUTOR_PANE|g" "$TUTOR_PROMPT_DST"
 sed -i "s|\${PROJECT_ROOT}|$PROJECT_ROOT|g" "$TUTOR_PROMPT_DST"
 
+# 9b. Copy curriculum to workspace
+echo "Copying curriculum to workspace..."
+cp "$PROMPTS_DIR/CURRICULUM.md" "$TUTOR_WORKSPACE/prompts/CURRICULUM.md" 2>/dev/null || true
+
 # 10. Start panes
 # STUDENT pane: bash in tutor workspace (student's practice area)
 echo "Setting up STUDENT pane (bash)..."
@@ -125,9 +129,11 @@ tmux send-keys -t $SESSION_NAME:0.0 "cd $TUTOR_WORKSPACE" C-m
 # Use CLAUDE_CONFIG_DIR to prevent reading ~/.claude/CLAUDE.md (which has SSH/MacBook stuff)
 echo "Setting up isolated Claude config for tutor..."
 TUTOR_CLAUDE_CONFIG="$TUTOR_WORKSPACE/.claude-config"
-mkdir -p "$TUTOR_CLAUDE_CONFIG"
+mkdir -p "$TUTOR_CLAUDE_CONFIG/commands"
 # Copy only essential global config (no CLAUDE.md)
 cp ~/.claude/settings.json "$TUTOR_CLAUDE_CONFIG/settings.json" 2>/dev/null || true
+# Copy /ecp command so tutor can load prompts
+cp ~/.claude/commands/ecp.md "$TUTOR_CLAUDE_CONFIG/commands/" 2>/dev/null || true
 echo "Starting Claude Code in TUTOR pane..."
 tmux send-keys -t $SESSION_NAME:0.1 "cd $TUTOR_WORKSPACE && unset CLAUDECODE && CLAUDE_CONFIG_DIR=$TUTOR_CLAUDE_CONFIG claude" C-m
 
