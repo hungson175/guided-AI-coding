@@ -2,22 +2,14 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { sendChatMessage, getTutorWsUrl } from '@/lib/api'
-
-function stripAnsi(text: string): string {
-  return text
-    .replace(/\x1b\][^\x07]*\x07/g, '')
-    .replace(/\x1b\[[0-9;?]*[a-zA-Z~]/g, '')
-    .replace(/\x1b[()][0-9A-B]/g, '')
-    .replace(/\x1b[=>]/g, '')
-    .replace(/\r/g, '')
-}
+import { parseAnsiToHtml } from '@/lib/ansi-parser'
 
 export function RightPanel() {
   const [tutorOutput, setTutorOutput] = useState('')
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
-  const outputRef = useRef<HTMLPreElement>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -38,7 +30,7 @@ export function RightPanel() {
     const ws = new WebSocket(url)
     wsRef.current = ws
     ws.onopen = () => setWsStatus('connected')
-    ws.onmessage = (event) => setTutorOutput(stripAnsi(event.data))
+    ws.onmessage = (event) => setTutorOutput(event.data)
     ws.onclose = () => {
       setWsStatus('disconnected')
       reconnectTimerRef.current = setTimeout(connectWs, 3000)
@@ -88,15 +80,17 @@ export function RightPanel() {
       </div>
 
       {/* Tutor Output */}
-      <pre
+      <div
         ref={outputRef}
         className="flex-1 overflow-y-auto p-4 text-[13px] leading-[1.6] text-[#c9d1d9] bg-[#0e1117] whitespace-pre-wrap break-words"
         style={{ fontFamily: 'Menlo, Monaco, "Courier New", monospace' }}
       >
-        {tutorOutput || (
+        {tutorOutput ? (
+          <div dangerouslySetInnerHTML={{ __html: parseAnsiToHtml(tutorOutput) }} />
+        ) : (
           <span className="text-[#484f58]">Waiting for tutor...</span>
         )}
-      </pre>
+      </div>
 
       {/* Input */}
       <div className="p-3 border-t border-[#2a2f3a] bg-[#161b22]">

@@ -56,6 +56,7 @@ backend/app/api/tutor_ws.py         WebSocket streaming TUTOR pane output
 terminal-service/                   Node.js terminal sidecar (tmux attach)
 tutor/memory/                       Tutor's persistent memory
 lt-memory/                          Long-term architecture memory
+docs/voice_input_ref/               Voice input pipeline reference (Soniox STT + Grok LLM correction) from AI-teams-controller
 ```
 
 ## Product Direction & Roadmap
