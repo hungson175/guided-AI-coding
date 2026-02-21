@@ -9,11 +9,16 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "Starting services in DEV mode..."
 echo ""
 
-# Clear any prod env overrides
+# Set up env files with API keys from ~/dev/.env
 rm -f "$PROJECT_ROOT/frontend/.env.local"
 rm -f "$PROJECT_ROOT/backend/.env"
+if [ -f ~/dev/.env ]; then
+  grep "^XAI_API_KEY=" ~/dev/.env >> "$PROJECT_ROOT/backend/.env" 2>/dev/null
+  SONIOX_KEY=$(grep "^SONIOX_API_KEY=" ~/dev/.env | cut -d= -f2)
+  [ -n "$SONIOX_KEY" ] && echo "NEXT_PUBLIC_SONIOX_API_KEY=$SONIOX_KEY" >> "$PROJECT_ROOT/frontend/.env.local"
+fi
 
-# Start backend
+# Start backend (load_dotenv() in main.py reads .env)
 cd "$PROJECT_ROOT/backend" && uv run uvicorn app.main:app --host 0.0.0.0 --port 17066 --reload &
 
 # Start terminal service

@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { sendChatMessage, getTutorWsUrl } from '@/lib/api'
 import { parseAnsiToHtml } from '@/lib/ansi-parser'
+import { useVoiceInput, VoiceStatus } from '@/hooks/useVoiceInput'
+import { Mic, MicOff, Loader2 } from 'lucide-react'
 
 export function RightPanel() {
   const [tutorOutput, setTutorOutput] = useState('')
@@ -12,6 +14,12 @@ export function RightPanel() {
   const outputRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Voice input: corrected text fills the input box
+  const handleCorrectedText = useCallback((text: string) => {
+    setInput(text)
+  }, [])
+  const { state: voiceState, startRecording, stopRecording } = useVoiceInput(handleCorrectedText)
 
   const scrollToBottom = useCallback(() => {
     if (outputRef.current) {
@@ -64,6 +72,52 @@ export function RightPanel() {
     }
   }
 
+  const handleMicClick = () => {
+    if (voiceState.status === 'recording') {
+      stopRecording()
+    } else if (voiceState.status === 'idle') {
+      startRecording()
+    }
+  }
+
+  const getMicButton = () => {
+    const status = voiceState.status
+    if (status === 'processing' || status === 'connecting') {
+      return (
+        <button
+          disabled
+          className="h-9 w-9 flex items-center justify-center rounded-md bg-[#30363d] text-[#8b949e] cursor-not-allowed"
+          title={status === 'processing' ? 'Processing...' : 'Connecting...'}
+        >
+          <Loader2 className="w-4 h-4 animate-spin" />
+        </button>
+      )
+    }
+    if (status === 'recording') {
+      return (
+        <button
+          onClick={handleMicClick}
+          className="h-9 w-9 flex items-center justify-center rounded-md bg-[#da3633] text-white hover:bg-[#f85149] relative"
+          title="Stop recording (or say 'gửi đi')"
+        >
+          <MicOff className="w-4 h-4" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#f85149] rounded-full animate-pulse" />
+        </button>
+      )
+    }
+    // idle
+    return (
+      <button
+        onClick={handleMicClick}
+        disabled={isLoading}
+        className="h-9 w-9 flex items-center justify-center rounded-md bg-[#30363d] text-[#c9d1d9] hover:bg-[#484f58] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+        title="Voice input"
+      >
+        <Mic className="w-4 h-4" />
+      </button>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#0e1117]">
       {/* Header */}
@@ -92,6 +146,21 @@ export function RightPanel() {
         )}
       </div>
 
+      {/* Voice transcript preview */}
+      {voiceState.status === 'recording' && voiceState.transcript && (
+        <div className="px-3 py-1.5 bg-[#1c2128] border-t border-[#2a2f3a] text-xs text-[#8b949e]">
+          <span className="text-[#f85149] mr-1.5">REC</span>
+          {voiceState.transcript}
+        </div>
+      )}
+
+      {/* Error display */}
+      {voiceState.error && (
+        <div className="px-3 py-1.5 bg-[#1c2128] border-t border-[#2a2f3a] text-xs text-[#f85149]">
+          {voiceState.error}
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t border-[#2a2f3a] bg-[#161b22]">
         <div className="flex gap-2">
@@ -104,6 +173,7 @@ export function RightPanel() {
             className="flex-1 h-9 px-3 text-sm text-[#e6edf3] bg-[#0e1117] rounded-md border border-[#30363d] placeholder:text-[#484f58] focus:outline-none focus:border-[#58a6ff] disabled:opacity-40"
             style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' }}
           />
+          {getMicButton()}
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
