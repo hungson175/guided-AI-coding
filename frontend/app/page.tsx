@@ -5,14 +5,12 @@ import { RightPanel } from '@/components/right-panel'
 
 export default function Page() {
   return (
-    <div className="flex h-screen bg-background">
-      {/* Left Panel - 70% */}
-      <div className="flex-1 border-r border-border">
+    <div className="flex h-screen bg-[#141820]">
+      <div className="flex-[7] min-w-0">
         <LeftPanel />
       </div>
-
-      {/* Right Panel - 30% */}
-      <div className="w-[30%] bg-card border-l border-border">
+      <div className="w-px bg-[#2a2f3a]" />
+      <div className="flex-[3] min-w-0">
         <RightPanel />
       </div>
     </div>

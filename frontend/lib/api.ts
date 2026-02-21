@@ -6,8 +6,17 @@ function getTerminalUrl(): string {
   return 'http://localhost:17076'
 }
 
+export function getTutorWsUrl(): string {
+  if (typeof window !== 'undefined') {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || `http://${window.location.hostname}:17066`
+    return apiUrl.replace(/^http/, 'ws') + '/api/ws/tutor'
+  }
+  return 'ws://localhost:17066/api/ws/tutor'
+}
+
 interface ChatResponse {
   text: string
+  sent: boolean
 }
 
 export async function sendChatMessage(message: string): Promise<ChatResponse> {
@@ -27,11 +36,4 @@ export async function sendTerminalCommand(command: string): Promise<void> {
     body: JSON.stringify({ data: command + '\n' }),
   })
   if (!res.ok) throw new Error(`Terminal send failed: ${res.status}`)
-}
-
-export async function readTerminalOutput(lines: number): Promise<string> {
-  const res = await fetch(`${getTerminalUrl()}/api/terminals/default/read?lines=${lines}`)
-  if (!res.ok) throw new Error(`Terminal read failed: ${res.status}`)
-  const data = await res.json()
-  return data.output
 }

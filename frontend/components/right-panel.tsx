@@ -1,113 +1,68 @@
 'use client'
 
-import React from "react"
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { sendChatMessage, getTutorWsUrl } from '@/lib/api'
 
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { sendChatMessage, sendTerminalCommand, readTerminalOutput } from '@/lib/api'
-
-interface Message {
-  id: string
-  type: 'user' | 'advisor'
-  text: string
+function stripAnsi(text: string): string {
+  return text
+    .replace(/\x1b\][^\x07]*\x07/g, '')
+    .replace(/\x1b\[[0-9;?]*[a-zA-Z~]/g, '')
+    .replace(/\x1b[()][0-9A-B]/g, '')
+    .replace(/\x1b[=>]/g, '')
+    .replace(/\r/g, '')
 }
 
 export function RightPanel() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'advisor',
-      text: "Hi! I'm your AI Advisor. You have a real terminal on the left — try typing 'ls' or 'pwd'. Ask me anything about building software!",
-    },
-  ])
+  const [tutorOutput, setTutorOutput] = useState('')
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
+  const outputRef = useRef<HTMLPreElement>(null)
+  const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const scrollToBottom = useCallback(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
+    }
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [tutorOutput, scrollToBottom])
 
-  function isTerminalCommand(text: string): string | null {
-    const trimmed = text.trim()
-    if (trimmed.startsWith('$ ')) return trimmed.slice(2)
-    return null
-  }
-
-  function stripAnsi(text: string): string {
-    return text
-      .replace(/\x1b\][^\x07]*\x07/g, '')       // OSC sequences (title sets)
-      .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')   // CSI sequences (colors, cursor, bracketed paste)
-      .replace(/\x1b[()][0-9A-B]/g, '')          // charset sequences
-      .replace(/\r/g, '')                         // carriage returns
-  }
-
-  const addMessage = (type: 'user' | 'advisor', text: string) => {
-    setMessages((prev) => [...prev, {
-      id: Date.now().toString() + Math.random(),
-      type,
-      text,
-    }])
-  }
-
-  const handleTerminalCommand = async (command: string) => {
-    addMessage('advisor', `Sending to terminal: \`${command}\``)
-    try {
-      await sendTerminalCommand(command)
-      await new Promise((resolve) => setTimeout(resolve, 5000))
-      const output = await readTerminalOutput(5)
-      const clean = stripAnsi(output).trim()
-      addMessage('advisor', `Terminal output:\n\`\`\`\n${clean}\n\`\`\``)
-    } catch {
-      addMessage('advisor', 'Failed to communicate with the terminal. Is it running?')
+  const connectWs = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return
+    const url = getTutorWsUrl()
+    setWsStatus('connecting')
+    const ws = new WebSocket(url)
+    wsRef.current = ws
+    ws.onopen = () => setWsStatus('connected')
+    ws.onmessage = (event) => setTutorOutput(stripAnsi(event.data))
+    ws.onclose = () => {
+      setWsStatus('disconnected')
+      reconnectTimerRef.current = setTimeout(connectWs, 3000)
     }
-  }
+    ws.onerror = () => ws.close()
+  }, [])
+
+  useEffect(() => {
+    connectWs()
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      wsRef.current?.close()
+    }
+  }, [connectWs])
 
   const handleSend = async () => {
     if (!input.trim()) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      text: input,
-    }
-    setMessages((prev) => [...prev, userMessage])
-    const currentInput = input
+    const message = input.trim()
     setInput('')
     setIsLoading(true)
-
-    const command = isTerminalCommand(currentInput)
-    if (command) {
-      await handleTerminalCommand(command)
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const response = await sendChatMessage(currentInput)
-      const advisorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'advisor',
-        text: response.text,
-      }
-      setMessages((prev) => [...prev, advisorMessage])
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          type: 'advisor',
-          text: 'Sorry, I could not reach the backend. Is it running?',
-        },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
+      await sendChatMessage(message)
+    } catch {}
+    finally { setIsLoading(false) }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -118,57 +73,51 @@ export function RightPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-card">
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.type === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-none'
-                  : 'bg-muted text-foreground rounded-bl-none'
-              }`}
-            >
-              <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-muted text-foreground px-4 py-2 rounded-lg rounded-bl-none">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-100"></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-200"></div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+    <div className="flex flex-col h-full bg-[#0e1117]">
+      {/* Header */}
+      <div className="h-9 flex items-center justify-between px-4 bg-[#161b22] border-b border-[#2a2f3a]">
+        <span className="text-xs text-[#e6edf3] font-medium">Tutor</span>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-2 h-2 rounded-full ${
+            wsStatus === 'connected' ? 'bg-[#3fb950]' :
+            wsStatus === 'connecting' ? 'bg-[#d29922]' :
+            'bg-[#f85149]'
+          }`} />
+          <span className="text-[11px] text-[#8b949e]">{wsStatus}</span>
+        </div>
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-border p-4 space-y-3">
+      {/* Tutor Output */}
+      <pre
+        ref={outputRef}
+        className="flex-1 overflow-y-auto p-4 text-[13px] leading-[1.6] text-[#c9d1d9] bg-[#0e1117] whitespace-pre-wrap break-words"
+        style={{ fontFamily: 'Menlo, Monaco, "Courier New", monospace' }}
+      >
+        {tutorOutput || (
+          <span className="text-[#484f58]">Waiting for tutor...</span>
+        )}
+      </pre>
+
+      {/* Input */}
+      <div className="p-3 border-t border-[#2a2f3a] bg-[#161b22]">
         <div className="flex gap-2">
-          <Input
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me anything..."
-            className="flex-1"
+            placeholder="Message tutor..."
             disabled={isLoading}
+            className="flex-1 h-9 px-3 text-sm text-[#e6edf3] bg-[#0e1117] rounded-md border border-[#30363d] placeholder:text-[#484f58] focus:outline-none focus:border-[#58a6ff] disabled:opacity-40"
+            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' }}
           />
-          <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="sm">
+          <button
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
+            className="h-9 px-4 text-sm font-medium rounded-md bg-[#238636] text-white hover:bg-[#2ea043] disabled:opacity-30 disabled:cursor-not-allowed"
+          >
             Send
-          </Button>
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          💡 Prefix with $ to run in terminal (e.g. "$ ls") or ask a question
-        </p>
       </div>
     </div>
   )

@@ -2,15 +2,13 @@
 
 ## Commands
 ```bash
-# Start the tmux team (STUDENT + TUTOR)
+# 1. Start the tmux session (STUDENT bash + TUTOR Claude Code)
 bash scripts/setup-tutor.sh
 
-# Attach to running session
-tmux attach -t guided_ai_coding
+# 2. Start all 3 web services
+bash scripts/dev.sh
 
-# Communication (inside the session)
-tm-send TUTOR "your message"       # Student → Tutor
-tm-send STUDENT "your message"     # Tutor → Student
+# 3. Open browser → http://localhost:3343
 
 # Communication (from outside tmux)
 tm-send -s guided_ai_coding TUTOR "your message"
@@ -18,40 +16,47 @@ tm-send -s guided_ai_coding STUDENT "your message"
 ```
 
 ## Architecture
-**AI Software Advisor** — a learning product that teaches non-technical users (CEOs/business owners) to build software by working alongside an AI tutor.
-
-Two-pane tmux layout: Left (70%) = student's Claude Code, Right (30%) = tutor Claude Code (Coach Son).
+**AI Software Advisor** — Web UI + tmux backend. Student uses browser, tutor runs as Claude Code in tmux.
 
 ```
-┌─────────────────────────────────┬──────────────────────┐
-│  STUDENT (Claude Code)          │  TUTOR (Claude Code)  │
-│  Pane 0 — 70% width            │  Pane 1 — 30% width   │
-│                                 │                       │
-│  - Regular Claude Code          │  - Claude Code with   │
-│  - Student codes here           │    tutor prompt       │
-│  - Runs commands                │  - Observes left pane │
-│  - Builds projects              │  - Teaches via chat   │
-│                                 │  - Uses tm-send       │
-└─────────────────────────────────┴──────────────────────┘
-         tmux session: guided_ai_coding
+┌─────────────────────────────────┬──────────────────────────────┐
+│  LEFT PANEL (70%)               │  RIGHT PANEL (30%)            │
+│  Interactive Terminal            │  Tutor Output + Chat Input    │
+│                                 │                               │
+│  xterm.js ↔ Socket.io           │  TUTOR pane output (streamed) │
+│  ↕                              │  + Message input box           │
+│  terminal-service (node-pty)    │  ↕                             │
+│  ↕                              │  Backend (FastAPI)             │
+│  tmux attach → STUDENT pane     │  ↕                             │
+│  (zoomed, status bar off)       │  tmux capture-pane / send-keys │
+│                                 │  → TUTOR pane                  │
+└─────────────────────────────────┴──────────────────────────────┘
+
+tmux session: guided_ai_coding
+  Pane 0 (STUDENT): bash shell — student's workspace (via web terminal)
+  Pane 1 (TUTOR):   Claude Code with tutor prompt
 ```
 
-```
-scripts/setup-tutor.sh         Tmux team setup (creates session, starts both Claude Code instances)
-prompts/TUTOR_PROMPT.md        Tutor role prompt (Coach Son persona, teaching workflow)
-tutor/memory/                  Tutor's persistent memory (progress.md, lessons-learned.md)
-docs/tmux/guided_ai_coding/   PANE_ROLES.md for tm-send auto-detection
-lt-memory/                     Long-term architecture memory
-```
+### Services
+| Service | Port | Description |
+|---------|------|-------------|
+| Frontend (Next.js) | 3343 | Web UI with left/right panels |
+| Backend (FastAPI) | 17066 | Chat API + TUTOR pane WebSocket |
+| Terminal Service (Node.js) | 17076 | xterm.js ↔ tmux STUDENT pane |
 
-**Current state:** Tmux team with 2 Claude Code instances — student workspace + AI tutor (Coach Son).
-
-### Retired (not deleted)
-The following were part of the V1-V3 web app approach and are no longer active:
-- `frontend/` — Next.js app
-- `backend/` — FastAPI app
-- `terminal-service/` — Node.js terminal sidecar
-- `scripts/dev.sh`, `scripts/prod.sh` — Old web app startup scripts
+### Key Files
+```
+scripts/setup-tutor.sh              Tmux session setup (bash + Claude Code)
+scripts/dev.sh                      Start all 3 services
+prompts/TUTOR_PROMPT.md             Tutor role prompt (tutor persona)
+frontend/                           Next.js web UI
+backend/                            FastAPI (chat API + tutor WS)
+backend/app/services/tmux_service.py  Tmux capture-pane/send-keys wrapper
+backend/app/api/tutor_ws.py         WebSocket streaming TUTOR pane output
+terminal-service/                   Node.js terminal sidecar (tmux attach)
+tutor/memory/                       Tutor's persistent memory
+lt-memory/                          Long-term architecture memory
+```
 
 ## Product Direction & Roadmap
 Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memory/product-vision.md](lt-memory/product-vision.md) for full vision, roadmap, and backlog.
@@ -60,10 +65,10 @@ Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memor
 - **Commit before new sprint:** Always commit all changes from the current sprint before starting the next one. This ensures clean revert points via Git.
 - **Branch when risky:** Consider creating a new branch for large/risky sprints so the main branch stays safe.
 
-## Communication Patterns
-- **Student → Tutor**: `tm-send TUTOR "question or update"`
-- **Tutor → Student**: `tm-send STUDENT "guidance or instruction"`
-- **Tutor observes student**: `tmux capture-pane -t <student_pane_id> -p -S -30`
+## How It Works
+- **Left panel**: Student's terminal. Just a bash shell. Knows nothing about the right panel.
+- **Right panel**: Continuously captures and displays the TUTOR tmux pane. Has an input box to send messages to the tutor.
+- **Tutor**: Claude Code instance that can peek at the student's terminal when needed. Never sends anything to it.
 
 ## Pitfalls
 Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky areas.

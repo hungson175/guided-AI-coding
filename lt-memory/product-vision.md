@@ -24,8 +24,9 @@ This is essentially a multi-agent system where both panels have IDs/positions an
 - **V1** (done): Build Tic-Tac-Toe in <15 min via mock terminal + advisor
 - **V2** (done): Live terminal (xterm.js + node-pty) + chat-terminal integration
 - **V3** (done): LLM tutor agent (Grok via xAI) with ReadTerminal tool, replaces keyword matching
-- **V4**: Load CSV, show charts — real data dashboard
-- **V5** (optional): Multi-page apps, routing, template gallery
+- **V4** (done): Web UI + tmux backend — Claude Code as tutor, terminal-service spawns tmux attach
+- **V5**: Load CSV, show charts — real data dashboard
+- **V6** (optional): Multi-page apps, routing, template gallery
 
 ## Backlog
 - **Memory system for advisor:** Text-based, progressive disclosure. Simple — no complex types. Lets the advisor remember user progress, decisions, and context across sessions.
