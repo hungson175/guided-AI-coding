@@ -2,13 +2,16 @@
 
 ## Commands
 ```bash
-# 1. Start the tmux session (STUDENT bash + TUTOR Claude Code)
-bash scripts/setup-tutor.sh
+# First-time setup
+tutor install
 
-# 2. Start all 3 web services
-bash scripts/dev.sh
-
-# 3. Open browser → http://localhost:3343
+# Day-to-day usage
+tutor start      # Start tmux + all services → http://localhost:3343
+tutor stop       # Stop everything
+tutor restart    # Stop + start (keeps tutor memory)
+tutor reset      # Full reset (clears tutor memory, fresh start)
+tutor update     # Pull from GitHub, reinstall deps
+tutor status     # Check what's running
 
 # Communication (from outside tmux)
 tm-send -s guided_ai_coding TUTOR "your message"
