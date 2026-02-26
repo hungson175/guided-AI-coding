@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Guided AI Coding — Tmux Team Setup
-# Creates a tmux session with STUDENT bash (70%) + TUTOR Claude Code (30%)
+# Creates a tmux session with 2 windows (STUDENT + TUTOR) + linked sessions
+# Each linked session views one window, enabling independent xterm.js connections
 # Tutor runs in ~/tutor-workspace/ to avoid reading project CLAUDE.md
 
 set -e  # Exit on error
@@ -20,7 +21,11 @@ echo "Project Root: $PROJECT_ROOT"
 echo "Session Name: $SESSION_NAME"
 echo "Tutor Workspace: $TUTOR_WORKSPACE"
 
-# 1. Check if session already exists
+# 1. Always clean up orphaned linked sessions first (they may exist from partial runs)
+tmux kill-session -t guided_student 2>/dev/null || true
+tmux kill-session -t guided_tutor 2>/dev/null || true
+
+# Check if base session already exists
 if tmux has-session -t $SESSION_NAME 2>/dev/null; then
     echo "Session '$SESSION_NAME' already exists!"
     read -p "Kill existing session and create new one? (y/n): " -n 1 -r
@@ -54,33 +59,46 @@ echo "Creating tmux session '$SESSION_NAME'..."
 cd "$PROJECT_ROOT"
 tmux new-session -d -s $SESSION_NAME
 
-# 4. Create 2-pane layout (70/30 split)
-echo "Creating 2-pane layout (70/30)..."
-tmux split-window -h -p 30 -t $SESSION_NAME
+# 4. Rename window 0 to STUDENT and create window 1 for TUTOR
+echo "Creating 2-window layout (STUDENT + TUTOR)..."
+tmux rename-window -t $SESSION_NAME:0 "STUDENT"
+tmux new-window -t $SESSION_NAME:1 -n "TUTOR"
 
-# 5. Resize window
-echo "Resizing window to ${WINDOW_WIDTH}x${WINDOW_HEIGHT}..."
+# 5. Resize windows
+echo "Resizing windows to ${WINDOW_WIDTH}x${WINDOW_HEIGHT}..."
 tmux resize-window -t $SESSION_NAME -x $WINDOW_WIDTH -y $WINDOW_HEIGHT
 
 # 5b. Hide tmux status bar (student sees terminal via web browser, not tmux chrome)
 tmux set -t $SESSION_NAME status off
 
-# 6. Set pane titles and role names
+# 6. Set pane titles and role names (each window has 1 pane: .0)
 tmux select-pane -t $SESSION_NAME:0.0 -T "STUDENT"
-tmux select-pane -t $SESSION_NAME:0.1 -T "TUTOR"
+tmux select-pane -t $SESSION_NAME:1.0 -T "TUTOR"
 
 tmux set-option -p -t $SESSION_NAME:0.0 @role_name "STUDENT"
-tmux set-option -p -t $SESSION_NAME:0.1 @role_name "TUTOR"
+tmux set-option -p -t $SESSION_NAME:1.0 @role_name "TUTOR"
 
 # 7. Get pane IDs
 echo "Getting pane IDs..."
-PANE_IDS=$(tmux list-panes -t $SESSION_NAME -F "#{pane_id}")
-STUDENT_PANE=$(echo "$PANE_IDS" | sed -n '1p')
-TUTOR_PANE=$(echo "$PANE_IDS" | sed -n '2p')
+STUDENT_PANE=$(tmux list-panes -t $SESSION_NAME:0 -F "#{pane_id}" | head -1)
+TUTOR_PANE=$(tmux list-panes -t $SESSION_NAME:1 -F "#{pane_id}" | head -1)
 
 echo "Pane IDs:"
-echo "  STUDENT (Pane 0): $STUDENT_PANE"
-echo "  TUTOR   (Pane 1): $TUTOR_PANE"
+echo "  STUDENT (Window 0): $STUDENT_PANE"
+echo "  TUTOR   (Window 1): $TUTOR_PANE"
+
+# 7b. Create linked sessions for independent terminal viewing
+echo "Creating linked sessions..."
+tmux new-session -d -s guided_student -t $SESSION_NAME
+tmux new-session -d -s guided_tutor -t $SESSION_NAME
+
+# Select the appropriate window in each linked session
+tmux select-window -t guided_student:0
+tmux select-window -t guided_tutor:1
+
+# Hide status bar in linked sessions too
+tmux set -t guided_student status off
+tmux set -t guided_tutor status off
 
 # 8. Verify tm-send is installed
 echo "Verifying tm-send installation..."
@@ -125,7 +143,7 @@ cp "$PROMPTS_DIR/CURRICULUM.md" "$TUTOR_WORKSPACE/prompts/CURRICULUM.md" 2>/dev/
 echo "Setting up STUDENT pane (bash)..."
 tmux send-keys -t $SESSION_NAME:0.0 "cd $TUTOR_WORKSPACE" C-m
 
-# TUTOR pane: Claude Code in workspace (isolated from global CLAUDE.md)
+# TUTOR pane (window 1): Claude Code in workspace (isolated from global CLAUDE.md)
 # Use CLAUDE_CONFIG_DIR to prevent reading ~/.claude/CLAUDE.md (which has SSH/MacBook stuff)
 echo "Setting up isolated Claude config for tutor..."
 TUTOR_CLAUDE_CONFIG="$TUTOR_WORKSPACE/.claude-config"
@@ -135,26 +153,25 @@ cp ~/.claude/settings.json "$TUTOR_CLAUDE_CONFIG/settings.json" 2>/dev/null || t
 # Copy /ecp command so tutor can load prompts
 cp ~/.claude/commands/ecp.md "$TUTOR_CLAUDE_CONFIG/commands/" 2>/dev/null || true
 echo "Starting Claude Code in TUTOR pane..."
-tmux send-keys -t $SESSION_NAME:0.1 "cd $TUTOR_WORKSPACE && unset CLAUDECODE && CLAUDE_CONFIG_DIR=$TUTOR_CLAUDE_CONFIG claude" C-m
+tmux send-keys -t $SESSION_NAME:1.0 "cd $TUTOR_WORKSPACE && unset CLAUDECODE && CLAUDE_CONFIG_DIR=$TUTOR_CLAUDE_CONFIG claude" C-m
 
 # 11. Wait for Claude Code to start
 echo "Waiting for Claude Code to start (15 seconds)..."
 sleep 15
 
-# 12. Send tutor prompt to right pane (relative to workspace)
+# 12. Send tutor prompt to TUTOR window (relative to workspace)
 echo "Loading tutor prompt into TUTOR pane..."
-tmux send-keys -t $SESSION_NAME:0.1 "/ecp prompts/.TUTOR_PROMPT_RESOLVED.md" C-m
+tmux send-keys -t $SESSION_NAME:1.0 "/ecp prompts/.TUTOR_PROMPT_RESOLVED.md" C-m
 
 # 13. Wait for prompt to load
 echo "Waiting for tutor prompt to load (5 seconds)..."
 sleep 5
 
 # Send enter to confirm
-tmux send-keys -t $SESSION_NAME:0.1 C-m
+tmux send-keys -t $SESSION_NAME:1.0 C-m
 
-# 14. Zoom STUDENT pane (so tmux attach shows only student's bash)
-echo "Zooming STUDENT pane..."
-tmux resize-pane -t $SESSION_NAME:0.0 -Z
+# 14. Select STUDENT window in base session (default view)
+tmux select-window -t $SESSION_NAME:0
 
 # 15. Clear student pane (removes tmux attach handshake junk)
 sleep 1
@@ -165,16 +182,17 @@ echo "=========================================="
 echo "Guided AI Coding Team Setup Complete!"
 echo "=========================================="
 echo ""
-echo "Session: $SESSION_NAME"
+echo "Session: $SESSION_NAME (base) + guided_student + guided_tutor (linked)"
 echo "Project: $PROJECT_ROOT"
 echo "Tutor workspace: $TUTOR_WORKSPACE"
 echo ""
 echo "Roles:"
-echo "  STUDENT (Pane 0, 70%): $STUDENT_PANE — Student's bash (accessed via web terminal)"
-echo "  TUTOR   (Pane 1, 30%): $TUTOR_PANE — AI tutor (Claude Code in ~/tutor-workspace)"
+echo "  STUDENT (Window 0): $STUDENT_PANE — Student's bash (accessed via web terminal)"
+echo "  TUTOR   (Window 1): $TUTOR_PANE — AI tutor (Claude Code in ~/tutor-workspace)"
 echo ""
-echo "To attach to the session:"
-echo "  tmux attach -t $SESSION_NAME"
+echo "To attach independently:"
+echo "  tmux attach -t guided_student   # See STUDENT window"
+echo "  tmux attach -t guided_tutor     # See TUTOR window"
 echo ""
 echo "Communication (from outside tmux):"
 echo "  tm-send -s $SESSION_NAME TUTOR \"your message\""

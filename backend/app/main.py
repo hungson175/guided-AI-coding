@@ -5,8 +5,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.commands import router as commands_router
-from app.api.chat import router as chat_router
-from app.api.tutor_ws import router as tutor_ws_router
 from app.api.voice import router as voice_router
 from app.config import settings
 from app.services.tmux_service import session_exists
@@ -22,8 +20,6 @@ app.add_middleware(
 )
 
 app.include_router(commands_router)
-app.include_router(chat_router)
-app.include_router(tutor_ws_router)
 app.include_router(voice_router)
 
 

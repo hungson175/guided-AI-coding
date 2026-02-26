@@ -2,7 +2,7 @@ import asyncio
 import subprocess
 
 SESSION_NAME = "guided_ai_coding"
-TUTOR_PANE = f"{SESSION_NAME}:0.1"
+TUTOR_PANE = f"{SESSION_NAME}:1.0"
 STUDENT_PANE = f"{SESSION_NAME}:0.0"
 
 

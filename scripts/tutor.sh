@@ -39,7 +39,9 @@ do_stop() {
     pkill -f "uvicorn app.main:app.*17066" 2>/dev/null || true
     pkill -f "node server.js" 2>/dev/null || true
 
-    # Kill tmux session
+    # Kill linked sessions first, then base session
+    tmux kill-session -t guided_student 2>/dev/null && log "  Killed linked session guided_student" || true
+    tmux kill-session -t guided_tutor 2>/dev/null && log "  Killed linked session guided_tutor" || true
     if tmux has-session -t $SESSION_NAME 2>/dev/null; then
         tmux kill-session -t $SESSION_NAME
         log "  Killed tmux session"
