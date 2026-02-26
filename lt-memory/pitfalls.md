@@ -5,14 +5,10 @@ Known gotchas and non-obvious behaviors. Add entries as they are discovered.
 ## Build Config
 - `next.config.mjs` has `typescript.ignoreBuildErrors: true` — TypeScript errors won't block builds. Don't rely on `pnpm build` to catch type issues; run `tsc` separately.
 
-## API Route vs Client-Side
-- `/api/chat/route.ts` exists and calls `getAdvisorResponse()`, but `RightPanel` also calls `getAdvisorResponse()` directly on the client. The API route is currently unused in the UI flow. If switching to a real LLM backend, update RightPanel to use the API route instead of the direct import.
-
-## AppPreview Iframe
-- `AppPreview` writes HTML directly into an iframe via `document.write()`. The iframe has `sandbox="allow-scripts allow-same-origin allow-popups"`. Changing sandbox permissions may break the Tic-Tac-Toe game's JavaScript execution.
-
-## Terminal Mock
-- `mockTerminalCommands()` lowercases input before matching — all command matching is case-insensitive. The `cd` command only recognizes "game" and "." as valid directories.
+## Linked Sessions + Race Condition
+- **Orphaned linked sessions crash setup:** `setup-tutor.sh` runs with `set -e`. If `guided_student` or `guided_tutor` already exist from a partial run, `tmux new-session -d -s guided_student -t base` fails and aborts the whole script. Always kill linked sessions unconditionally before creating them.
+- **Browser connects before tmux is ready:** `dev.sh` starts web services while `setup-tutor.sh` is still sleeping (15s for Claude Code). If browser connects, `exec tmux attach` fails → PTY dies permanently. `terminal-service/server.js` has a retry loop (30 attempts, 1s apart) to handle this. Don't remove it.
+- **`tutor reset` wipes Claude Code auth:** Reset deletes `~/tutor-workspace` including the custom `CLAUDE_CONFIG_DIR`. The tutor's Claude Code will need re-authentication after reset. `setup-tutor.sh` copies `settings.json` but NOT `.credentials.json`.
 
 ## Terminal Service CORS
 - Socket.io has its own `cors: { origin: '*' }` in the `Server` constructor, but this does NOT apply to Express REST routes. If the frontend calls REST endpoints (e.g. `/api/terminals/default/send`), you must also add `app.use(cors())` to Express. These are two separate CORS mechanisms.
@@ -25,9 +21,11 @@ Known gotchas and non-obvious behaviors. Add entries as they are discovered.
 - API keys live in `~/dev/.env` (shared across projects). `dev.sh` auto-copies `XAI_API_KEY` → `backend/.env` and `SONIOX_API_KEY` → `frontend/.env.local` (as `NEXT_PUBLIC_SONIOX_API_KEY`) on each start.
 - Backend uses `load_dotenv()` in `main.py` to load `.env` into `os.environ`. Voice endpoint reads `XAI_API_KEY` via `os.environ.get()`.
 
-## Terminal Output ANSI Codes
-- Right panel uses `ansi-to-html` to render colored Claude Code output. Do NOT strip ANSI codes — they carry color information. The old `stripAnsi()` approach was removed in Sprint 1.
-- `ansi-to-html` is configured with `escapeXML: true` (XSS prevention) and renders via `dangerouslySetInnerHTML`.
+## xterm.js Listener Leaks
+- `terminal.onData()` and `terminal.onResize()` return `IDisposable` objects. You MUST call `.dispose()` on cleanup, or listeners accumulate on reconnect (each keystroke fires N times). See `interactive-terminal.tsx` for the correct pattern.
+
+## Bash Commands in JavaScript Strings
+- When building bash `for` loops as JS strings, `do;` is a syntax error. Write as a single string: `for i in $(seq 1 30); do cmd; done` — NOT as an array joined with `'; '` which produces `do; cmd`.
 
 ## npm Install
 - `npm install` in `frontend/` fails without `--legacy-peer-deps` due to peer dependency conflicts. Always use `npm install --legacy-peer-deps` when adding packages.
