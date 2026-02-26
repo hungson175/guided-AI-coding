@@ -150,8 +150,6 @@ TUTOR_CLAUDE_CONFIG="$TUTOR_WORKSPACE/.claude-config"
 mkdir -p "$TUTOR_CLAUDE_CONFIG/commands"
 # Copy only essential global config (no CLAUDE.md)
 cp ~/.claude/settings.json "$TUTOR_CLAUDE_CONFIG/settings.json" 2>/dev/null || true
-# Copy auth credentials so tutor doesn't need to re-login after reset
-cp ~/.claude/.credentials.json "$TUTOR_CLAUDE_CONFIG/.credentials.json" 2>/dev/null || true
 # Copy /ecp command so tutor can load prompts
 cp ~/.claude/commands/ecp.md "$TUTOR_CLAUDE_CONFIG/commands/" 2>/dev/null || true
 echo "Starting Claude Code in TUTOR pane..."

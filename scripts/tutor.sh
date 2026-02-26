@@ -101,8 +101,24 @@ do_reset() {
     do_stop
 
     if [ -d "$TUTOR_WORKSPACE" ]; then
+        # Preserve Claude Code credentials across reset (OAuth tokens are config-dir-bound)
+        CREDS_BACKUP=""
+        CREDS_FILE="$TUTOR_WORKSPACE/.claude-config/.credentials.json"
+        if [ -f "$CREDS_FILE" ]; then
+            CREDS_BACKUP=$(mktemp)
+            cp "$CREDS_FILE" "$CREDS_BACKUP"
+            log "Backed up tutor credentials"
+        fi
+
         log "Clearing tutor workspace: $TUTOR_WORKSPACE"
         rm -rf "$TUTOR_WORKSPACE"
+
+        # Restore credentials into the dir that setup-tutor.sh will create
+        if [ -n "$CREDS_BACKUP" ]; then
+            mkdir -p "$TUTOR_WORKSPACE/.claude-config"
+            mv "$CREDS_BACKUP" "$TUTOR_WORKSPACE/.claude-config/.credentials.json"
+            log "Restored tutor credentials"
+        fi
     fi
 
     sleep 2
