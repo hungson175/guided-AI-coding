@@ -12,7 +12,12 @@ const ACK_THRESHOLD = 50000
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 
-export function InteractiveTerminal() {
+interface InteractiveTerminalProps {
+  terminalName?: string
+  onSocketReady?: (socket: Socket) => void
+}
+
+export function InteractiveTerminal({ terminalName = 'default', onSocketReady }: InteractiveTerminalProps = {}) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const xtermRef = useRef<Terminal | null>(null)
   const socketRef = useRef<Socket | null>(null)
@@ -69,7 +74,7 @@ export function InteractiveTerminal() {
     }
 
     const socket = io(wsUrl, {
-      query: { terminal: 'default' },
+      query: { terminal: terminalName },
       transports: ['websocket'],
     })
 
@@ -82,6 +87,8 @@ export function InteractiveTerminal() {
 
       const { cols, rows } = terminal
       socket.emit('resize', { cols, rows })
+
+      onSocketReady?.(socket)
     })
 
     socket.on('disconnect', () => {
@@ -103,18 +110,20 @@ export function InteractiveTerminal() {
       terminal.write(`\r\n\x1b[33mProcess exited with code ${code}\x1b[0m\r\n`)
     })
 
-    terminal.onData((data) => {
+    const onDataDisposable = terminal.onData((data) => {
       socket.emit('data', data)
     })
 
-    terminal.onResize(({ cols, rows }) => {
+    const onResizeDisposable = terminal.onResize(({ cols, rows }) => {
       socket.emit('resize', { cols, rows })
     })
 
     return () => {
+      onDataDisposable.dispose()
+      onResizeDisposable.dispose()
       socket.disconnect()
     }
-  }, [])
+  }, [terminalName, onSocketReady])
 
   // Connect socket on mount
   useEffect(() => {

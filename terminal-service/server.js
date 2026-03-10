@@ -96,12 +96,16 @@ function createTerminal(name) {
   return session;
 }
 
-function attachTmux(session) {
+function attachTmux(session, termName) {
   if (session.tmuxAttached) return;
   session.tmuxAttached = true;
-  // exec replaces the bare bash with tmux — PTY is already at the correct size
-  session.pty.write(`stty -echo && exec tmux attach-session -t ${TMUX_SESSION}\r`);
-  console.log(`Attached tmux session "${TMUX_SESSION}"`);
+  // Each terminal type connects to its own linked session for independent window viewing
+  const tmuxTarget = termName === 'tutor' ? 'guided_tutor' : 'guided_student';
+  // Use a retry wrapper: if the linked session doesn't exist yet (setup still running),
+  // wait and retry instead of exec'ing into a failing tmux attach that kills the PTY.
+  const attachCmd = `for i in $(seq 1 30); do tmux has-session -t ${tmuxTarget} 2>/dev/null && break; sleep 1; done; stty -echo && exec tmux attach-session -t ${tmuxTarget}`;
+  session.pty.write(attachCmd + '\r');
+  console.log(`Attaching tmux linked session "${tmuxTarget}" for terminal "${termName}" (with retry)`);
 }
 
 function getOrCreateTerminal(name) {
@@ -186,7 +190,7 @@ io.on('connection', (socket) => {
     } catch (e) { /* ignore resize errors */ }
 
     // Attach to tmux after first resize — PTY now has the browser's real dimensions
-    attachTmux(session);
+    attachTmux(session, termName);
   });
 
   socket.on('disconnect', () => {
