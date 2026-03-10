@@ -15,9 +15,20 @@ export function RightPanel() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Voice input: corrected text fills the input box
-  const handleCorrectedText = useCallback((text: string) => {
+  // Voice input: corrected text auto-sends to tutor
+  const handleCorrectedText = useCallback(async (text: string) => {
+    if (!text.trim()) return
     setInput(text)
+    setIsLoading(true)
+    try {
+      await sendChatMessage(text)
+      setInput('')
+    } catch (err) {
+      console.error('[Voice] Auto-send failed:', err)
+      // Leave text in input so user can retry manually
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
   const { state: voiceState, startRecording, stopRecording } = useVoiceInput(handleCorrectedText)
 

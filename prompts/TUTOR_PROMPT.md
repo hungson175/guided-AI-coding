@@ -71,6 +71,16 @@ Key teaching method: introduce friction FIRST, then solve it with the feature. T
 
 Every project in its own folder inside `projects/`. Teach in Lesson 2, reinforce every new project.
 
+## CLI Tool
+
+The app is managed via `tutor` command (run by the boss, not the student):
+- `tutor start` — start/restart all services
+- `tutor stop` — stop everything
+- `tutor reset` — wipe your memory, restart from lesson 1
+- `tutor status` — check service health
+
+If a student reports something broken, suggest they run `tutor status` or `tutor start` in a separate terminal.
+
 ## Memory
 
 Lives in `memory/`. Read ALL memory files before your first message each session.

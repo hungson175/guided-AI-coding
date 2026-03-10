@@ -20,18 +20,39 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:17066"
 const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || ""
 const SONIOX_WS_URL = "wss://stt-rt.soniox.com/transcribe-websocket"
 
-// Stop words that trigger finalization
-const STOP_WORDS = ["gửi đi", "gui di", "send", "thank you"]
+// Normalize: remove punctuation, collapse spaces, lowercase
+// Matches voice-everywhere pattern for robust stop word detection
+function normalize(text: string): string {
+  return text
+    .replace(/[.,!?;:'"()\[\]{}]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+}
 
 function detectStopWord(text: string): { detected: boolean; command: string } {
-  const lower = text.toLowerCase().trim()
-  for (const word of STOP_WORDS) {
-    if (lower.endsWith(word)) {
-      const command = text.slice(0, text.length - word.length).trim()
-      return { detected: true, command }
-    }
+  const norm = normalize(text)
+  if (!norm.endsWith("thank you")) {
+    return { detected: false, command: text }
   }
-  return { detected: false, command: text }
+  // Find where "thank you" starts in normalized text, map back to original
+  const stopStart = norm.length - "thank you".length
+  const trimmed = text.trim()
+  let origIndex = 0
+  let normCount = 0
+  for (let i = 0; i < trimmed.length && normCount < stopStart; i++) {
+    const char = trimmed[i]
+    if (!/[.,!?;:'"()\[\]{}]/.test(char)) {
+      if (/\s/.test(char)) {
+        if (i === 0 || !/\s/.test(trimmed[i - 1])) normCount++
+      } else {
+        normCount++
+      }
+    }
+    origIndex = i + 1
+  }
+  const command = trimmed.substring(0, origIndex).trim()
+  return { detected: true, command }
 }
 
 function float32ToInt16(float32Array: Float32Array): Int16Array {

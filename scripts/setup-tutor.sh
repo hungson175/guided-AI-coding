@@ -22,15 +22,20 @@ echo "Tutor Workspace: $TUTOR_WORKSPACE"
 
 # 1. Check if session already exists
 if tmux has-session -t $SESSION_NAME 2>/dev/null; then
-    echo "Session '$SESSION_NAME' already exists!"
-    read -p "Kill existing session and create new one? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ "${TUTOR_FORCE:-0}" = "1" ]; then
         tmux kill-session -t $SESSION_NAME
-        echo "Killed existing session"
+        echo "Killed existing session (TUTOR_FORCE=1)"
     else
-        echo "Aborted. Use 'tmux attach -t $SESSION_NAME' to attach"
-        exit 0
+        echo "Session '$SESSION_NAME' already exists!"
+        read -p "Kill existing session and create new one? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            tmux kill-session -t $SESSION_NAME
+            echo "Killed existing session"
+        else
+            echo "Aborted. Use 'tmux attach -t $SESSION_NAME' to attach"
+            exit 0
+        fi
     fi
 fi
 
@@ -112,9 +117,9 @@ fi
 
 # Create resolved copy with actual pane IDs in workspace
 cp "$TUTOR_PROMPT_SRC" "$TUTOR_PROMPT_DST"
-sed -i "s|\${STUDENT_PANE}|$STUDENT_PANE|g" "$TUTOR_PROMPT_DST"
-sed -i "s|\${TUTOR_PANE}|$TUTOR_PANE|g" "$TUTOR_PROMPT_DST"
-sed -i "s|\${PROJECT_ROOT}|$PROJECT_ROOT|g" "$TUTOR_PROMPT_DST"
+sed -i '' "s|\${STUDENT_PANE}|$STUDENT_PANE|g" "$TUTOR_PROMPT_DST"
+sed -i '' "s|\${TUTOR_PANE}|$TUTOR_PANE|g" "$TUTOR_PROMPT_DST"
+sed -i '' "s|\${PROJECT_ROOT}|$PROJECT_ROOT|g" "$TUTOR_PROMPT_DST"
 
 # 9b. Copy curriculum to workspace
 echo "Copying curriculum to workspace..."
