@@ -1,93 +1,47 @@
 # Architecture Details
 
-## Hybrid Architecture: Web UI + Tmux Backend
+## Pure Tmux Architecture (no web app)
 
-The student interacts via a **web browser**. The underlying engine is a **tmux session** with 2 windows + linked sessions for independent terminal viewing.
+Student and tutor interact through a single tmux session with 2 panes side by side.
 
 ```
-┌─────────────────────────────────┬──────────────────────────────┐
-│  LEFT PANEL (70%)               │  RIGHT PANEL (30%)            │
-│  Interactive Terminal            │  Interactive Terminal          │
-│                                 │  + Voice input (mic in header) │
-│  xterm.js ↔ Socket.io           │  xterm.js ↔ Socket.io          │
-│  ↕                              │  ↕                             │
-│  terminal-service (node-pty)    │  terminal-service (node-pty)   │
-│  ↕                              │  ↕                             │
-│  tmux attach → guided_student   │  tmux attach → guided_tutor    │
-│  (linked session, window 0)     │  (linked session, window 1)    │
-└─────────────────────────────────┴──────────────────────────────┘
-
-tmux sessions:
-  guided_ai_coding (base): 2 windows
-    Window 0 "STUDENT": bash shell — student's workspace
-    Window 1 "TUTOR":   Claude Code with tutor prompt
-  guided_student (linked → base, selects window 0)
-  guided_tutor   (linked → base, selects window 1)
+tmux session: guided_ai_coding
+┌──────────────────────────────┬─────────────────────────┐
+│  LEFT PANE (60%)             │  RIGHT PANE (40%)       │
+│  STUDENT terminal            │  TUTOR (Claude Code)    │
+│  bash shell                  │  Tutor prompt loaded    │
+│  ~/tutor-workspace/          │  via /ecp               │
+│  Student types commands here │  Observes student pane  │
+└──────────────────────────────┴─────────────────────────┘
 ```
-
-### Why Linked Sessions (Not Panes)
-
-The old design used 2 panes in 1 window with STUDENT zoomed. All `tmux attach` clients saw the same zoomed pane — no way to view TUTOR independently. Linked sessions solve this: each linked session shares the same windows but can independently select which window to display.
-
-### Three Services
-
-| Service | Port | Role |
-|---------|------|------|
-| **Frontend** (Next.js) | 3343 | Web UI — left + right interactive terminals |
-| **Backend** (FastAPI) | 17066 | POST /api/voice/correct (Grok STT correction), health check |
-| **Terminal Service** (Node.js) | 17076 | xterm.js ↔ tmux via node-pty + Socket.io (both STUDENT and TUTOR) |
 
 ### Setup Flow
 
-1. `bash scripts/setup-tutor.sh` — Creates tmux session with 2 windows + linked sessions
-   - Window 0 STUDENT: plain bash in `~/tutor-workspace`
-   - Window 1 TUTOR: Claude Code with tutor prompt via `/ecp`
-   - `guided_student` linked session → window 0
-   - `guided_tutor` linked session → window 1
-2. `bash scripts/dev.sh` — Starts frontend + backend + terminal-service
-3. Student opens `http://localhost:3343` in browser
+1. `tutor start` → `scripts/setup-tutor.sh`
+2. Creates tmux session `guided_ai_coding` with 200x50 terminal
+3. Left pane (0.0): bash shell in `tutor-workspace/`
+4. Right pane (0.1): Claude Code with isolated config
+5. Tutor prompt loaded via `/ecp prompts/.TUTOR_PROMPT_RESOLVED.md`
+6. Prompt has pane IDs resolved (sed replacement at setup time)
+7. Session start hook re-injects prompt after auto-compact
 
-### How terminal-service works
-- `createTerminal(name)` spawns a bare bash shell, waits for first `resize` from browser
-- `attachTmux(session, termName)` picks the linked session based on `termName`:
-  - `"default"` → `tmux attach -t guided_student`
-  - `"tutor"` → `tmux attach -t guided_tutor`
-- Has a retry loop (30 attempts, 1s) to wait for linked sessions to exist before attaching
-- Each browser tab gets its own PTY → tmux client
+### Communication Patterns
 
-### How right panel works (post-refactor)
-- Right panel is `<InteractiveTerminal terminalName="tutor" />` — identical to left panel but targeting different linked session
-- Full keyboard support: arrow keys, Ctrl+C, menu selection, Escape — all work
-- Voice input: mic button in header → Soniox STT → Grok correction → `socket.emit('data', text)` types directly into terminal
-- No more polling, capture-pane, or send-keys for the right panel
+**Student → Tutor**: Student types directly in right pane (or boss uses `tm-send`)
+**Tutor observes student**: `tmux capture-pane -t <STUDENT_PANE_ID> -p -S -30`
+**Tutor NEVER types into student pane**: Student types everything themselves
 
-## Communication Patterns
+### Tutor Agent
 
-### Student → Tutor (via right panel terminal)
-Student types directly into the tutor's Claude Code terminal. Full interactive input.
+**Prompt**: `prompts/TUTOR_PROMPT.md` (with `${STUDENT_PANE}`, `${TUTOR_PANE}`, `${PROJECT_ROOT}` placeholders)
+**Resolved copy**: `tutor-workspace/prompts/.TUTOR_PROMPT_RESOLVED.md`
 
-### Tutor → Student (via tm-send)
-```bash
-tm-send STUDENT "Try running ls to see your files"
-```
+**Memory**: `tutor-workspace/memory/`
+- `progress.md` — Where the student left off (read on every session start)
+- `lessons-learned.md` — Teaching notes about the student
 
-### Tutor Observation
-```bash
-tmux capture-pane -t <STUDENT_PANE_ID> -p -S -30
-```
+### Pane ID Injection
+Setup script gets actual pane IDs after creating the session, then sed-replaces placeholders in the resolved prompt copy. The SessionStart hook re-reads this resolved file after compaction.
 
-## Tutor Agent
-
-### Prompt: `prompts/TUTOR_PROMPT.md`
-- Persona: Coach Son — Vietnamese-speaking coding tutor
-- Student: Anh Tuong — CEO with zero programming experience
-- Teaching: Progressive lessons (terminal basics → Claude Code → building projects)
-- Verification: Reads student's pane output to check work
-
-### Memory: `tutor/memory/` (lives in `~/tutor-workspace/memory/`)
-- `progress.md` — Where the student left off
-- `lessons-learned.md` — Teaching notes
-- Tutor reads `progress.md` on every session start
-
-## Pane ID Injection
-The tutor prompt uses placeholders (`${STUDENT_PANE}`, `${TUTOR_PANE}`, `${PROJECT_ROOT}`) replaced at setup time. The resolved copy is `~/tutor-workspace/prompts/.TUTOR_PROMPT_RESOLVED.md`.
+### Isolated Claude Config
+Tutor uses `CLAUDE_CONFIG_DIR=$WORKSPACE/.claude-config` to avoid loading boss's global CLAUDE.md (which has SSH/MacBook stuff irrelevant to tutoring).

@@ -6,85 +6,67 @@
 tutor install
 
 # Day-to-day usage
-tutor start      # Start tmux + all services → http://localhost:3343
-tutor stop       # Stop everything
+tutor start      # Start tmux session (student + tutor panes)
+tutor stop       # Kill the session
 tutor restart    # Stop + start (keeps tutor memory)
-tutor reset      # Full reset (clears tutor memory, fresh start)
-tutor update     # Pull from GitHub, reinstall deps
-tutor status     # Check what's running
+tutor reset      # Clear tutor memory (keeps student projects)
+tutor update     # Pull from GitHub
+tutor status     # Check if running
 
 # Communication (from outside tmux)
 tm-send -s guided_ai_coding TUTOR "your message"
-tm-send -s guided_ai_coding STUDENT "your message"
 ```
 
 ## Architecture
-**AI Software Advisor** — Web UI + tmux backend. Student uses browser, tutor runs as Claude Code in tmux.
+**AI Coding Tutor** — Pure tmux, no web app. Student uses left pane, tutor (Claude Code) runs in right pane.
 
 ```
-┌─────────────────────────────────┬──────────────────────────────┐
-│  LEFT PANEL (70%)               │  RIGHT PANEL (30%)            │
-│  Interactive Terminal            │  Interactive Terminal          │
-│                                 │  + Voice input (mic in header) │
-│  xterm.js ↔ Socket.io           │  xterm.js ↔ Socket.io          │
-│  ↕                              │  ↕                             │
-│  terminal-service (node-pty)    │  terminal-service (node-pty)   │
-│  ↕                              │  ↕                             │
-│  tmux attach → guided_student   │  tmux attach → guided_tutor    │
-│  (linked session, window 0)     │  (linked session, window 1)    │
-└─────────────────────────────────┴──────────────────────────────┘
-
-tmux sessions:
-  guided_ai_coding (base): 2 windows
-    Window 0 "STUDENT": bash shell — student's workspace
-    Window 1 "TUTOR":   Claude Code with tutor prompt
-  guided_student (linked → base, selects window 0)
-  guided_tutor   (linked → base, selects window 1)
+tmux session: guided_ai_coding
+┌──────────────────────────────┬─────────────────────────┐
+│  LEFT PANE (60%)             │  RIGHT PANE (40%)       │
+│  STUDENT terminal            │  TUTOR (Claude Code)    │
+│  bash shell                  │  Loads tutor prompt     │
+│  ~/tutor-workspace/          │  Observes student via   │
+│  Student types here          │  tmux capture-pane      │
+└──────────────────────────────┴─────────────────────────┘
 ```
-
-### Services
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend (Next.js) | 3343 | Web UI with left/right panels |
-| Backend (FastAPI) | 17066 | Voice correction API + health check |
-| Terminal Service (Node.js) | 17076 | xterm.js ↔ tmux (STUDENT + TUTOR) |
 
 ### Key Files
 ```
-scripts/setup-tutor.sh              Tmux session setup (2 windows + linked sessions)
-scripts/dev.sh                      Start all 3 services
-prompts/TUTOR_PROMPT.md             Tutor role prompt (tutor persona)
-frontend/                           Next.js web UI
-frontend/components/interactive-terminal.tsx  Reusable xterm.js terminal (terminalName prop)
-frontend/components/right-panel.tsx  Tutor terminal + voice input overlay
-backend/                            FastAPI (voice API + health)
-backend/app/services/tmux_service.py  Tmux session_exists check
-terminal-service/                   Node.js terminal sidecar (tmux attach)
-tutor/memory/                       Tutor's persistent memory
-lt-memory/                          Long-term architecture memory
-docs/voice_input_ref/               Voice input pipeline reference (Soniox STT + Grok LLM correction)
-frontend/hooks/useVoiceInput.ts     Soniox STT + Grok correction hook
-backend/app/api/voice.py            POST /api/voice/correct — transcript correction via Grok
+prompts/TUTOR_PROMPT.md          Tutor persona & teaching style
+prompts/CURRICULUM.md            15-lesson curriculum (4 phases)
+scripts/setup-tutor.sh           Creates tmux session with 2 panes
+scripts/tutor.sh                 CLI manager (start/stop/restart/reset)
+scripts/tutor-hooks/             Session-start hook (re-injects prompt after compact)
+tutor-workspace/                 Student's workspace (bundled with project)
+  memory/progress.md             Where student left off
+  memory/lessons-learned.md      Student profile notes
+  projects/                      Student's code projects
+  prompts/                       Resolved prompts (generated at setup)
+docs/research/                   Pedagogical framework & Claude Code feature inventory
+lt-memory/                       Long-term architecture memory
 ```
 
-## Product Direction & Roadmap
-Two Claude Code instances: left = user's workspace, right = tutor. See [lt-memory/product-vision.md](lt-memory/product-vision.md) for full vision, roadmap, and backlog.
+## How It Works
+- `tutor start` runs `setup-tutor.sh` which creates a tmux session with 2 panes
+- Left pane: bash shell in `tutor-workspace/` — student types here
+- Right pane: Claude Code with tutor prompt loaded via `/ecp`
+- Tutor observes student's terminal via `tmux capture-pane`
+- Tutor never types into student's pane — student does all typing
+- Progress saved in `tutor-workspace/memory/progress.md`
+
+## Teaching Methodology
+- **Friction-first**: Student feels the problem before learning the solution
+- **Just-in-time**: Never explain a concept before it's needed
+- **Scaffold then fade**: Start hands-on, pull back as confidence grows
+- **Every exercise builds the project**: No busywork
 
 ## Workflow Rules
-- **Commit before new sprint:** Always commit all changes from the current sprint before starting the next one. This ensures clean revert points via Git.
-- **Branch when risky:** Consider creating a new branch for large/risky sprints so the main branch stays safe.
-
-## How It Works
-- **Left panel**: Interactive terminal (xterm.js) connected to `guided_student` linked session → STUDENT window.
-- **Right panel**: Interactive terminal (xterm.js) connected to `guided_tutor` linked session → TUTOR window. Has mic button for voice input.
-- **Both panels** are full PTY terminals — arrow keys, Ctrl+C, menu selection, etc. all work.
-- **Tutor**: Claude Code instance that can peek at the student's terminal when needed. Never sends anything to it.
-
-## Pitfalls
-Read [lt-memory/pitfalls.md](lt-memory/pitfalls.md) before modifying tricky areas.
+- **Commit before new sprint:** Always commit before starting risky changes
+- **Branch when risky:** Use branches for large/risky changes
 
 ## Long-Term Memory
-`lt-memory/` uses progressive disclosure — this file stays short with summaries, detail files are read on-demand:
-- `pitfalls.md` — Known gotchas and things that break unexpectedly
-- `architecture.md` — Tmux team setup, communication patterns, pane architecture
-- `product-vision.md` — Multi-agent architecture vision, roadmap, and backlog
+`lt-memory/` — read on demand:
+- `pitfalls.md` — Known gotchas
+- `architecture.md` — Architecture details
+- `product-vision.md` — Vision & roadmap

@@ -1,13 +1,13 @@
 #!/bin/bash
 # Guided AI Coding — Tutor Manager
-# Usage: tutor [install|start|stop|restart|reset|update|status]
+# Usage: tutor [install|start|stop|restart|reset|status]
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SESSION_NAME="guided_ai_coding"
-TUTOR_WORKSPACE="$HOME/tutor-workspace"
+WORKSPACE="$PROJECT_ROOT/tutor-workspace"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,61 +19,31 @@ warn() { echo -e "${YELLOW}[tutor]${NC} $1"; }
 err()  { echo -e "${RED}[tutor]${NC} $1"; }
 
 # ──────────────────────────────────────────────
-# STOP — kill services and tmux session
+# STOP — kill tmux session
 # ──────────────────────────────────────────────
 do_stop() {
-    log "Stopping services..."
+    log "Stopping..."
 
-    # Kill web services by port
-    for PORT in 3343 17066 17076; do
-        PID=$(lsof -ti :$PORT 2>/dev/null || true)
-        if [ -n "$PID" ]; then
-            kill -9 $PID 2>/dev/null || true
-            log "  Killed process on port $PORT"
-        fi
-    done
-
-    # Fallback: kill by process name
-    pkill -f "next dev --port 3343" 2>/dev/null || true
-    pkill -f "pnpm dev" 2>/dev/null || true
-    pkill -f "uvicorn app.main:app.*17066" 2>/dev/null || true
-    pkill -f "node server.js" 2>/dev/null || true
-
-    # Kill linked sessions first, then base session
-    tmux kill-session -t guided_student 2>/dev/null && log "  Killed linked session guided_student" || true
-    tmux kill-session -t guided_tutor 2>/dev/null && log "  Killed linked session guided_tutor" || true
     if tmux has-session -t $SESSION_NAME 2>/dev/null; then
         tmux kill-session -t $SESSION_NAME
-        log "  Killed tmux session"
+        log "Killed tmux session"
+    else
+        log "Not running."
     fi
-
-    sleep 1
-    log "Stopped."
 }
 
 # ──────────────────────────────────────────────
-# START — setup tmux + start services
+# START — setup tmux session
 # ──────────────────────────────────────────────
 do_start() {
     if tmux has-session -t $SESSION_NAME 2>/dev/null; then
         warn "Already running. Use 'tutor restart' or 'tutor stop' first."
+        warn "To reattach: tmux attach -t $SESSION_NAME"
         return 1
     fi
 
     log "Starting Guided AI Coding..."
-
-    # Setup tmux session (auto-confirm if exists)
-    log "Setting up tmux session..."
-    bash "$SCRIPT_DIR/setup-tutor.sh" <<< "y"
-
-    # Start web services
-    log "Starting web services..."
-    bash "$SCRIPT_DIR/dev.sh" &
-    sleep 5
-
-    do_status
-    echo ""
-    log "Open browser: http://localhost:3343"
+    TUTOR_FORCE=1 bash "$SCRIPT_DIR/setup-tutor.sh"
 }
 
 # ──────────────────────────────────────────────
@@ -87,10 +57,11 @@ do_restart() {
 }
 
 # ──────────────────────────────────────────────
-# RESET — full clean slate (clears tutor memory)
+# RESET — clear tutor memory, fresh start
 # ──────────────────────────────────────────────
 do_reset() {
     warn "This will DELETE tutor memory and start fresh."
+    warn "(Student projects are preserved.)"
     read -p "Are you sure? (y/n): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -100,25 +71,11 @@ do_reset() {
 
     do_stop
 
-    if [ -d "$TUTOR_WORKSPACE" ]; then
-        # Preserve Claude Code credentials across reset (OAuth tokens are config-dir-bound)
-        CREDS_BACKUP=""
-        CREDS_FILE="$TUTOR_WORKSPACE/.claude-config/.credentials.json"
-        if [ -f "$CREDS_FILE" ]; then
-            CREDS_BACKUP=$(mktemp)
-            cp "$CREDS_FILE" "$CREDS_BACKUP"
-            log "Backed up tutor credentials"
-        fi
-
-        log "Clearing tutor workspace: $TUTOR_WORKSPACE"
-        rm -rf "$TUTOR_WORKSPACE"
-
-        # Restore credentials into the dir that setup-tutor.sh will create
-        if [ -n "$CREDS_BACKUP" ]; then
-            mkdir -p "$TUTOR_WORKSPACE/.claude-config"
-            mv "$CREDS_BACKUP" "$TUTOR_WORKSPACE/.claude-config/.credentials.json"
-            log "Restored tutor credentials"
-        fi
+    # Clear memory only, preserve projects and prompts
+    if [ -d "$WORKSPACE/memory" ]; then
+        log "Clearing tutor memory..."
+        rm -rf "$WORKSPACE/memory"
+        mkdir -p "$WORKSPACE/memory"
     fi
 
     sleep 2
@@ -127,7 +84,7 @@ do_reset() {
 }
 
 # ──────────────────────────────────────────────
-# UPDATE — pull from GitHub, reinstall deps, restart
+# UPDATE — pull from GitHub, restart
 # ──────────────────────────────────────────────
 do_update() {
     log "Checking for updates..."
@@ -143,56 +100,31 @@ do_update() {
 
     log "Updated: $OLD_COMMIT -> $NEW_COMMIT"
 
-    # Reinstall dependencies
-    log "Installing backend dependencies..."
-    cd "$PROJECT_ROOT/backend" && uv sync 2>&1 | tail -3
-
-    log "Installing frontend dependencies..."
-    cd "$PROJECT_ROOT/frontend" && npm install --legacy-peer-deps 2>&1 | tail -3
-
-    log "Installing terminal-service dependencies..."
-    cd "$PROJECT_ROOT/terminal-service" && npm install 2>&1 | tail -3
-
     # Restart if currently running
     if tmux has-session -t $SESSION_NAME 2>/dev/null; then
-        do_stop
-        sleep 2
-        do_start
+        do_restart
     fi
 
     log "Update complete."
 }
 
 # ──────────────────────────────────────────────
-# INSTALL — first-time setup (deps + symlink)
+# INSTALL — first-time setup (symlink only)
 # ──────────────────────────────────────────────
 do_install() {
     log "Installing Guided AI Coding..."
 
     # Check prerequisites
-    for CMD in tmux node uv git; do
+    for CMD in tmux claude; do
         if ! command -v $CMD &>/dev/null; then
             err "Missing prerequisite: $CMD"
+            case $CMD in
+                tmux)  echo "  brew install tmux" ;;
+                claude) echo "  npm install -g @anthropic-ai/claude-code" ;;
+            esac
             exit 1
         fi
     done
-
-    if ! command -v tm-send &>/dev/null; then
-        err "Missing prerequisite: tm-send (install to ~/.local/bin/tm-send)"
-        exit 1
-    fi
-
-    # Install backend dependencies
-    log "Installing backend dependencies..."
-    cd "$PROJECT_ROOT/backend" && uv sync 2>&1 | tail -3
-
-    # Install frontend dependencies
-    log "Installing frontend dependencies..."
-    cd "$PROJECT_ROOT/frontend" && npm install --legacy-peer-deps 2>&1 | tail -3
-
-    # Install terminal-service dependencies
-    log "Installing terminal-service dependencies..."
-    cd "$PROJECT_ROOT/terminal-service" && npm install 2>&1 | tail -3
 
     # Create symlink so 'tutor' works globally
     SYMLINK_PATH="$HOME/.local/bin/tutor"
@@ -203,17 +135,17 @@ do_install() {
     # Verify ~/.local/bin is in PATH
     if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
         warn "Add ~/.local/bin to your PATH:"
-        warn '  echo '\''export PATH="$HOME/.local/bin:$PATH"'\'' >> ~/.bashrc && source ~/.bashrc'
+        warn '  echo '\''export PATH="$HOME/.local/bin:$PATH"'\'' >> ~/.zshrc && source ~/.zshrc'
     fi
 
     echo ""
     log "Install complete! Commands:"
-    log "  tutor start    — Start the app"
-    log "  tutor stop     — Stop everything"
+    log "  tutor start    — Start the tutor session"
+    log "  tutor stop     — Stop the session"
     log "  tutor restart  — Restart (keeps memory)"
-    log "  tutor reset    — Full reset (clears memory)"
+    log "  tutor reset    — Fresh start (clears memory, keeps projects)"
     log "  tutor update   — Pull updates from GitHub"
-    log "  tutor status   — Check what's running"
+    log "  tutor status   — Check if running"
 }
 
 # ──────────────────────────────────────────────
@@ -224,23 +156,22 @@ do_status() {
     log "=== Status ==="
 
     if tmux has-session -t $SESSION_NAME 2>/dev/null; then
-        echo -e "  Tmux session:    ${GREEN}running${NC}"
+        echo -e "  Tmux session:  ${GREEN}running${NC}"
+        echo "  Reattach:      tmux attach -t $SESSION_NAME"
     else
-        echo -e "  Tmux session:    ${RED}stopped${NC}"
+        echo -e "  Tmux session:  ${RED}stopped${NC}"
+        echo "  Start:         tutor start"
     fi
 
-    for PAIR in "3343:Frontend" "17066:Backend" "17076:Terminal"; do
-        PORT="${PAIR%%:*}"
-        NAME="${PAIR##*:}"
-        if ss -tlnp 2>/dev/null | grep -q ":$PORT " ; then
-            echo -e "  $NAME ($PORT): ${GREEN}running${NC}"
-        else
-            echo -e "  $NAME ($PORT): ${RED}stopped${NC}"
-        fi
-    done
+    if [ -f "$WORKSPACE/memory/progress.md" ]; then
+        LESSON=$(grep -m1 "Lesson:" "$WORKSPACE/memory/progress.md" 2>/dev/null || echo "unknown")
+        echo "  Progress:      $LESSON"
+    else
+        echo "  Progress:      (new student)"
+    fi
 
     COMMIT=$(git -C "$PROJECT_ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-    echo "  Git commit:      $COMMIT"
+    echo "  Git commit:    $COMMIT"
     echo ""
 }
 
@@ -263,12 +194,12 @@ case "$CMD" in
         echo "Usage: tutor [command]"
         echo ""
         echo "Commands:"
-        echo "  install  First-time setup (install deps + create 'tutor' command)"
-        echo "  start    Start tmux session + all services"
-        echo "  stop     Stop everything"
-        echo "  restart  Stop then start (keeps tutor memory)"
-        echo "  reset    Full reset (clears tutor memory, fresh start)"
-        echo "  update   Pull latest from GitHub, reinstall deps"
-        echo "  status   Show what's running"
+        echo "  install  First-time setup (create 'tutor' command)"
+        echo "  start    Start the tutor tmux session"
+        echo "  stop     Stop the session"
+        echo "  restart  Restart (keeps tutor memory)"
+        echo "  reset    Clear tutor memory, fresh start (keeps projects)"
+        echo "  update   Pull latest from GitHub"
+        echo "  status   Check if running"
         ;;
 esac

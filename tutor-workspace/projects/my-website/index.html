@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tuong Nguyen | CEO & Technology Leader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <nav class="nav">
+      <a href="#" class="logo">TN</a>
+      <div class="nav-links">
+        <a href="#about">Gioi Thieu</a>
+        <a href="#leadership">Lanh Dao</a>
+        <a href="#contact">Lien He</a>
+        <a href="#blog">Blog</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Chuyen doi giao dien">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content fade-in">
+        <div class="avatar-frame">
+          <div class="avatar-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <h1 class="hero-name">Tuong Nguyen</h1>
+        <p class="hero-title">CEO & Nha Quan Ly Cong Nghe</p>
+        <p class="hero-tagline">Dan dat doanh nghiep bang tam nhin cong nghe. Kien tao gia tri ben vung thong qua doi moi sang tao va lanh dao chien luoc.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Blog Preview -->
+  <section class="blog-preview" id="blog">
+    <div class="container">
+      <h2 class="section-title fade-in">Blog</h2>
+      <div class="blog-preview-list fade-in" id="blogPreviewList"></div>
+      <div class="blog-preview-empty fade-in" id="blogPreviewEmpty" style="display:none;">
+        <p>Chua co bai viet nao.</p>
+      </div>
+      <div class="blog-preview-more fade-in">
+        <a href="blog.html" class="blog-view-all">Xem tat ca bai viet &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="gold-divider">
+
+  <!-- About -->
+  <section class="about" id="about">
+    <div class="container">
+      <h2 class="section-title fade-in">Gioi Thieu</h2>
+      <div class="about-content fade-in">
+        <p>Voi hon 15 nam kinh nghiem trong linh vuc cong nghe va quan tri doanh nghiep, toi da dan dat nhieu to chuc vuot qua nhung giai doan chuyen doi quan trong — tu khoi nghiep den mo rong quy mo quoc te.</p>
+        <p>Triet ly lanh dao cua toi dat nen tang tren su ket hop giua tu duy cong nghe va tam nhin chien luoc. Toi tin rang cong nghe khong chi la cong cu, ma la dong luc cot loi de kien tao gia tri va thay doi cach chung ta lam viec, song va ket noi.</p>
+        <p>Hien tai, toi dang tap trung vao viec xay dung cac doanh nghiep cong nghe ben vung, dong thoi dong gop kinh nghiem vao cac hoi dong quan tri de tao ra tac dong tich cuc cho cong dong doanh nghiep Viet Nam.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="gold-divider">
+
+  <!-- Leadership -->
+  <section class="leadership" id="leadership">
+    <div class="container">
+      <h2 class="section-title fade-in">Vai Tro Lanh Dao</h2>
+      <div class="leadership-grid">
+
+        <article class="role-card fade-in">
+          <div class="role-badge">CEO</div>
+          <h3 class="role-company">TechVision Corp</h3>
+          <p class="role-period">2020 — Hien tai</p>
+          <p class="role-desc">Dan dat chien luoc tong the va dieu hanh hoat dong cua cong ty cong nghe hang dau, tap trung vao cac giai phap chuyen doi so cho doanh nghiep.</p>
+        </article>
+
+        <article class="role-card fade-in">
+          <div class="role-badge">Thanh Vien HDQT</div>
+          <h3 class="role-company">InnoTech Solutions</h3>
+          <p class="role-period">2021 — Hien tai</p>
+          <p class="role-desc">Tu van chien luoc phat trien san pham va mo rong thi truong quoc te cho cong ty phan mem doanh nghiep.</p>
+        </article>
+
+        <article class="role-card fade-in">
+          <div class="role-badge">Thanh Vien HDQT</div>
+          <h3 class="role-company">Digital Finance JSC</h3>
+          <p class="role-period">2022 — Hien tai</p>
+          <p class="role-desc">Dinh huong ung dung cong nghe trong linh vuc tai chinh, thuc day doi moi sang tao va quan tri rui ro hieu qua.</p>
+        </article>
+
+        <article class="role-card fade-in">
+          <div class="role-badge">Co Van</div>
+          <h3 class="role-company">StartUp Ecosystem Fund</h3>
+          <p class="role-period">2023 — Hien tai</p>
+          <p class="role-desc">Ho tro he sinh thai khoi nghiep cong nghe Viet Nam thong qua co van chien luoc va ket noi nguon luc dau tu.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="gold-divider">
+
+  <!-- Footer / Contact -->
+  <footer class="footer" id="contact">
+    <div class="container">
+      <h2 class="section-title fade-in">Lien He</h2>
+      <p class="footer-text fade-in">Ket noi voi toi qua cac kenh duoi day.</p>
+      <div class="social-links fade-in">
+        <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          <span>LinkedIn</span>
+        </a>
+        <a href="mailto:contact@tuongnguyen.com" aria-label="Email">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Email</span>
+        </a>
+      </div>
+      <p class="copyright">&copy; 2026 Tuong Nguyen. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Admin Edit Button -->
+  <button class="admin-edit-btn" id="adminEditBtn" aria-label="Chinh sua noi dung">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+  </button>
+
+  <!-- Admin Modal -->
+  <div class="admin-overlay" id="adminOverlay">
+    <div class="admin-panel">
+      <div class="admin-panel-header">
+        <h2>Chinh Sua Noi Dung</h2>
+        <button class="admin-close-btn" id="adminCloseBtn" aria-label="Dong">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Hero Section -->
+      <div class="admin-section">
+        <div class="admin-section-title">Hero</div>
+        <div class="admin-field">
+          <label for="admin-name">Ten</label>
+          <input type="text" id="admin-name">
+        </div>
+        <div class="admin-field">
+          <label for="admin-title">Chuc danh</label>
+          <input type="text" id="admin-title">
+        </div>
+        <div class="admin-field">
+          <label for="admin-tagline">Gioi thieu ngan</label>
+          <textarea id="admin-tagline" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- Roles Section -->
+      <div class="admin-section">
+        <div class="admin-section-title">Vai Tro Lanh Dao</div>
+        <div id="adminRolesContainer"></div>
+        <button class="admin-add-role" id="adminAddRole">+ Them vai tro</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="admin-actions">
+        <button class="admin-save-btn" id="adminSaveBtn">Luu</button>
+        <button class="admin-cancel-btn" id="adminCancelBtn">Huy</button>
+        <button class="admin-reset-link" id="adminResetBtn">Reset ve mac dinh</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Dark/Light mode toggle
+    const toggle = document.getElementById('themeToggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const stored = localStorage.getItem('theme');
+
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (stored === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    toggle.addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Intersection Observer for fade-in animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // ===== Admin Panel Logic =====
+    const defaultContent = {
+      hero: {
+        name: 'Tuong Nguyen',
+        title: 'CEO & Nha Quan Ly Cong Nghe',
+        tagline: 'Dan dat doanh nghiep bang tam nhin cong nghe. Kien tao gia tri ben vung thong qua doi moi sang tao va lanh dao chien luoc.'
+      },
+      roles: [
+        {
+          badge: 'CEO',
+          company: 'TechVision Corp',
+          period: '2020 — Hien tai',
+          desc: 'Dan dat chien luoc tong the va dieu hanh hoat dong cua cong ty cong nghe hang dau, tap trung vao cac giai phap chuyen doi so cho doanh nghiep.'
+        },
+        {
+          badge: 'Thanh Vien HDQT',
+          company: 'InnoTech Solutions',
+          period: '2021 — Hien tai',
+          desc: 'Tu van chien luoc phat trien san pham va mo rong thi truong quoc te cho cong ty phan mem doanh nghiep.'
+        },
+        {
+          badge: 'Thanh Vien HDQT',
+          company: 'Digital Finance JSC',
+          period: '2022 — Hien tai',
+          desc: 'Dinh huong ung dung cong nghe trong linh vuc tai chinh, thuc day doi moi sang tao va quan tri rui ro hieu qua.'
+        },
+        {
+          badge: 'Co Van',
+          company: 'StartUp Ecosystem Fund',
+          period: '2023 — Hien tai',
+          desc: 'Ho tro he sinh thai khoi nghiep cong nghe Viet Nam thong qua co van chien luoc va ket noi nguon luc dau tu.'
+        }
+      ]
+    };
+
+    function loadContent() {
+      try {
+        const saved = localStorage.getItem('siteContent');
+        return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultContent));
+      } catch {
+        return JSON.parse(JSON.stringify(defaultContent));
+      }
+    }
+
+    function renderContent() {
+      const data = loadContent();
+
+      // Hero
+      document.querySelector('.hero-name').textContent = data.hero.name;
+      document.querySelector('.hero-title').textContent = data.hero.title;
+      document.querySelector('.hero-tagline').textContent = data.hero.tagline;
+      document.title = data.hero.name + ' | ' + data.hero.title;
+
+      // Roles
+      const grid = document.querySelector('.leadership-grid');
+      grid.innerHTML = '';
+      data.roles.forEach(role => {
+        const card = document.createElement('article');
+        card.className = 'role-card fade-in visible';
+        card.innerHTML =
+          '<div class="role-badge">' + escapeHTML(role.badge) + '</div>' +
+          '<h3 class="role-company">' + escapeHTML(role.company) + '</h3>' +
+          '<p class="role-period">' + escapeHTML(role.period) + '</p>' +
+          '<p class="role-desc">' + escapeHTML(role.desc) + '</p>';
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Admin overlay elements
+    const overlay = document.getElementById('adminOverlay');
+    const rolesContainer = document.getElementById('adminRolesContainer');
+
+    function createRoleEntry(role, index) {
+      const div = document.createElement('div');
+      div.className = 'admin-role-entry';
+      div.innerHTML =
+        '<div class="admin-role-entry-header">' +
+          '<span class="admin-role-number">Vai tro ' + (index + 1) + '</span>' +
+          '<button class="admin-remove-role" type="button" aria-label="Xoa vai tro">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="admin-field">' +
+          '<label>Chuc vu</label>' +
+          '<input type="text" class="role-badge-input" value="' + escapeAttr(role.badge) + '">' +
+        '</div>' +
+        '<div class="admin-field">' +
+          '<label>Cong ty</label>' +
+          '<input type="text" class="role-company-input" value="' + escapeAttr(role.company) + '">' +
+        '</div>' +
+        '<div class="admin-field">' +
+          '<label>Thoi gian</label>' +
+          '<input type="text" class="role-period-input" value="' + escapeAttr(role.period) + '">' +
+        '</div>' +
+        '<div class="admin-field">' +
+          '<label>Mo ta</label>' +
+          '<textarea class="role-desc-input" rows="2">' + escapeHTML(role.desc) + '</textarea>' +
+        '</div>';
+
+      div.querySelector('.admin-remove-role').addEventListener('click', () => {
+        if (rolesContainer.children.length > 1) {
+          div.remove();
+          renumberRoles();
+        }
+      });
+
+      return div;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renumberRoles() {
+      rolesContainer.querySelectorAll('.admin-role-entry').forEach((entry, i) => {
+        entry.querySelector('.admin-role-number').textContent = 'Vai tro ' + (i + 1);
+      });
+    }
+
+    function openEditor() {
+      const data = loadContent();
+
+      document.getElementById('admin-name').value = data.hero.name;
+      document.getElementById('admin-title').value = data.hero.title;
+      document.getElementById('admin-tagline').value = data.hero.tagline;
+
+      rolesContainer.innerHTML = '';
+      data.roles.forEach((role, i) => {
+        rolesContainer.appendChild(createRoleEntry(role, i));
+      });
+
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditor() {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function saveContent() {
+      const data = {
+        hero: {
+          name: document.getElementById('admin-name').value.trim(),
+          title: document.getElementById('admin-title').value.trim(),
+          tagline: document.getElementById('admin-tagline').value.trim()
+        },
+        roles: []
+      };
+
+      rolesContainer.querySelectorAll('.admin-role-entry').forEach(entry => {
+        data.roles.push({
+          badge: entry.querySelector('.role-badge-input').value.trim(),
+          company: entry.querySelector('.role-company-input').value.trim(),
+          period: entry.querySelector('.role-period-input').value.trim(),
+          desc: entry.querySelector('.role-desc-input').value.trim()
+        });
+      });
+
+      localStorage.setItem('siteContent', JSON.stringify(data));
+      renderContent();
+      closeEditor();
+    }
+
+    function resetContent() {
+      if (confirm('Reset ve noi dung mac dinh? Moi thay doi se bi xoa.')) {
+        localStorage.removeItem('siteContent');
+        renderContent();
+        closeEditor();
+      }
+    }
+
+    // Event listeners
+    document.getElementById('adminEditBtn').addEventListener('click', openEditor);
+    document.getElementById('adminCloseBtn').addEventListener('click', closeEditor);
+    document.getElementById('adminCancelBtn').addEventListener('click', closeEditor);
+    document.getElementById('adminSaveBtn').addEventListener('click', saveContent);
+    document.getElementById('adminResetBtn').addEventListener('click', resetContent);
+    document.getElementById('adminAddRole').addEventListener('click', () => {
+      const index = rolesContainer.children.length;
+      rolesContainer.appendChild(createRoleEntry({ badge: '', company: '', period: '', desc: '' }, index));
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeEditor();
+    });
+
+    // Toggle admin button with Ctrl+Shift+E
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        const btn = document.getElementById('adminEditBtn');
+        btn.style.display = btn.style.display === 'flex' ? 'none' : 'flex';
+      }
+    });
+
+    // Render content from localStorage on page load
+    renderContent();
+
+    // ===== Blog Preview =====
+    function formatDateShort(dateStr) {
+      const d = new Date(dateStr);
+      const months = ['Thg 1','Thg 2','Thg 3','Thg 4','Thg 5','Thg 6','Thg 7','Thg 8','Thg 9','Thg 10','Thg 11','Thg 12'];
+      return d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear();
+    }
+
+    function renderBlogPreview() {
+      const previewList = document.getElementById('blogPreviewList');
+      const previewEmpty = document.getElementById('blogPreviewEmpty');
+
+      try {
+        const saved = localStorage.getItem('blogPosts');
+        const posts = saved ? JSON.parse(saved) : [];
+        const sorted = posts.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+
+        if (sorted.length === 0) {
+          previewList.innerHTML = '';
+          previewEmpty.style.display = 'block';
+          return;
+        }
+
+        previewEmpty.style.display = 'none';
+        previewList.innerHTML = sorted.map(post =>
+          '<a href="blog.html#post-' + post.id + '" class="blog-preview-item">' +
+            '<span class="blog-preview-date">' + formatDateShort(post.date) + '</span>' +
+            '<span class="blog-preview-title">' + escapeHTML(post.title) + '</span>' +
+          '</a>'
+        ).join('');
+      } catch {
+        previewList.innerHTML = '';
+        previewEmpty.style.display = 'block';
+      }
+    }
+
+    renderBlogPreview();
+  </script>
+</body>
+</html>

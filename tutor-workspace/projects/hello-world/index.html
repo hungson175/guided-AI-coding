@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Thu Chi</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <h1>Quản Lý Thu Chi</h1>
+      <p class="subtitle">Theo dõi tài chính cá nhân</p>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="summary">
+      <div class="card card-balance">
+        <div class="card-icon">&#9878;</div>
+        <span class="card-label">Số dư</span>
+        <span class="card-amount" id="balance">0 ₫</span>
+      </div>
+      <div class="card card-income">
+        <div class="card-icon">&darr;</div>
+        <span class="card-label">Thu nhập</span>
+        <span class="card-amount" id="total-income">0 ₫</span>
+      </div>
+      <div class="card card-expense">
+        <div class="card-icon">&uarr;</div>
+        <span class="card-label">Chi tiêu</span>
+        <span class="card-amount" id="total-expense">0 ₫</span>
+      </div>
+    </section>
+
+    <!-- Dashboard Charts -->
+    <section class="dashboard">
+      <h2 class="section-title" id="dashboard-title">Dashboard - Tháng 2/2026</h2>
+
+      <!-- Row 1: Donut charts -->
+      <div class="chart-row">
+        <div class="chart-card">
+          <h3>Chi tiêu theo danh mục</h3>
+          <div class="chart-container donut-container">
+            <canvas id="chart-expense-donut"></canvas>
+          </div>
+          <div class="chart-legend" id="legend-expense"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Thu nhập theo nguồn</h3>
+          <div class="chart-container donut-container">
+            <canvas id="chart-income-donut"></canvas>
+          </div>
+          <div class="chart-legend" id="legend-income"></div>
+        </div>
+      </div>
+
+      <!-- Row 2: Bar chart - daily trend -->
+      <div class="chart-card chart-wide">
+        <h3>Biến động trong tháng</h3>
+        <div class="chart-container bar-container">
+          <canvas id="chart-daily"></canvas>
+        </div>
+      </div>
+
+      <!-- Row 3: Stats cards -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-value" id="stat-savings-rate">0%</span>
+          <span class="stat-label">Tỷ lệ tiết kiệm</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-avg-daily">0 ₫</span>
+          <span class="stat-label">Chi tiêu TB/ngày</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-top-category">—</span>
+          <span class="stat-label">Danh mục chi nhiều nhất</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-tx-count">0</span>
+          <span class="stat-label">Tổng giao dịch</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls: Add + Filter + Search -->
+    <section class="controls">
+      <button class="btn btn-primary" id="btn-add">+ Thêm giao dịch</button>
+      <div class="filters">
+        <input type="month" id="filter-month" title="Lọc theo tháng">
+        <select id="filter-type">
+          <option value="all">Tất cả</option>
+          <option value="income">Thu nhập</option>
+          <option value="expense">Chi tiêu</option>
+        </select>
+        <select id="filter-category">
+          <option value="all">Tất cả danh mục</option>
+        </select>
+        <input type="text" id="search" placeholder="Tìm kiếm..." autocomplete="off">
+      </div>
+    </section>
+
+    <!-- Category Breakdown Bars -->
+    <section class="monthly-summary" id="monthly-summary">
+      <h2 id="monthly-title">Chi tiết danh mục</h2>
+      <div class="category-breakdown" id="category-breakdown"></div>
+    </section>
+
+    <!-- Transaction List -->
+    <section class="transactions">
+      <h2>Lịch sử giao dịch</h2>
+      <div class="transaction-list" id="transaction-list">
+        <p class="empty-state">Chưa có giao dịch nào. Nhấn "+ Thêm giao dịch" để bắt đầu.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: Add/Edit Transaction -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Thêm giao dịch</h2>
+        <button class="btn-close" id="btn-close-modal">&times;</button>
+      </div>
+      <form id="transaction-form">
+        <input type="hidden" id="form-id">
+
+        <div class="form-group">
+          <label>Loại giao dịch</label>
+          <div class="type-toggle">
+            <button type="button" class="toggle-btn active" data-type="expense" id="toggle-expense">Chi tiêu</button>
+            <button type="button" class="toggle-btn" data-type="income" id="toggle-income">Thu nhập</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-amount">Số tiền (₫)</label>
+          <input type="number" id="form-amount" min="0" step="1000" required placeholder="Nhập số tiền...">
+        </div>
+
+        <div class="form-group">
+          <label for="form-category">Danh mục</label>
+          <select id="form-category" required>
+            <option value="">-- Chọn danh mục --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="form-description">Mô tả</label>
+          <input type="text" id="form-description" placeholder="Mô tả giao dịch..." autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="form-date">Ngày</label>
+          <input type="date" id="form-date" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btn-save">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div class="modal-overlay" id="delete-overlay">
+    <div class="modal modal-small">
+      <h2>Xác nhận xóa</h2>
+      <p>Bạn có chắc muốn xóa giao dịch này?</p>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="btn-cancel-delete">Hủy</button>
+        <button class="btn btn-danger" id="btn-confirm-delete">Xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

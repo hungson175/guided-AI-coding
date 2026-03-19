@@ -1,34 +1,24 @@
 # Product Vision
 
 ## What This Is
-NOT a demo. A real product being progressively built. Teaches non-technical users (CEOs/business owners) to build software by working alongside an AI tutor.
+A real product that teaches non-technical users (CEOs/business owners) to build software by working alongside an AI tutor. Pure tmux — no web app overhead.
 
-## Multi-Agent Architecture (Target)
-Two Claude Code instances in the same UI:
-- **Left panel (terminal):** Claude Code instance for the user — a workspace to code, experiment, and learn.
-- **Right panel (tutor):** Claude Code instance prompted as an interactive tutor. Teaching method injected via system prompt.
+## Architecture
+Two tmux panes in one session:
+- **Left pane (terminal):** Student's workspace — they type commands, run code, experiment
+- **Right pane (tutor):** Claude Code instance prompted as an interactive tutor
 
-The tutor (right) must be **aware of the left panel's state** — it needs to:
-1. Send commands/messages to the left terminal
-2. Read output/state from the left terminal
-3. React to what the user does in the left terminal
+The tutor observes the student's terminal via `tmux capture-pane` and guides them through a 15-lesson curriculum from "what is a terminal?" to building real projects with Claude Code.
 
-This is essentially a multi-agent system where both panels have IDs/positions and can communicate bidirectionally.
+## Teaching Method
+- **Friction-first**: Student feels the problem before learning the solution
+- **Just-in-time**: Never explain a concept before the student needs it
+- **Scaffold then fade**: Start hands-on, pull back as confidence grows
+- 15 lessons in 4 phases: basics → Claude Code power tools → independence → advanced
 
-### Implementation Approach
-- Create a **skill** for the right-panel Claude Code (e.g. "work with interactive environment") that gives it tools to send/read from the left terminal
-- Communication via the terminal-service REST API (POST /send, GET /read) already exists
-- The skill would wrap these APIs so the tutor agent can naturally interact with the user's workspace
+## Version History
+- **V1-V4**: Web app versions (Next.js + FastAPI + terminal-service) — over-engineered
+- **V5** (current): Pure tmux. Just prompts + scripts. No web dependencies.
 
-## Version Roadmap
-- **V1** (done): Build Tic-Tac-Toe in <15 min via mock terminal + advisor
-- **V2** (done): Live terminal (xterm.js + node-pty) + chat-terminal integration
-- **V3** (done): LLM tutor agent (Grok via xAI) with ReadTerminal tool, replaces keyword matching
-- **V4** (done): Web UI + tmux backend — Claude Code as tutor, terminal-service spawns tmux attach
-- **V5**: Load CSV, show charts — real data dashboard
-- **V6** (optional): Multi-page apps, routing, template gallery
-
-## Backlog
-- **Memory system for advisor:** Text-based, progressive disclosure. Simple — no complex types. Lets the advisor remember user progress, decisions, and context across sessions.
-- **Tutor skill for terminal interaction:** Skill that lets the right-panel Claude Code send/read from the left terminal programmatically.
-- **Panel awareness:** Both panels need IDs and a protocol for discovering each other's state.
+## Why Tmux-Only
+The web app added complexity (CORS, Socket.io, xterm.js, 3 services) for marginal benefit. The student needs a terminal — tmux IS a terminal. One script, two panes, done.

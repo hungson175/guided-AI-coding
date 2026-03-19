@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog | Tuong Nguyen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <nav class="nav">
+      <a href="index.html" class="logo">TN</a>
+      <div class="nav-links">
+        <a href="index.html#about">Gioi Thieu</a>
+        <a href="index.html#leadership">Lanh Dao</a>
+        <a href="index.html#contact">Lien He</a>
+        <a href="blog.html" class="nav-active">Blog</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Chuyen doi giao dien">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Blog Content -->
+  <section class="blog-section">
+    <div class="container">
+
+      <!-- Blog List View -->
+      <div class="blog-list-view" id="blogListView">
+        <div class="blog-header">
+          <h1 class="section-title">Blog</h1>
+          <p class="blog-subtitle">Chia se hang ngay va nhat ky ca nhan</p>
+        </div>
+
+        <div class="blog-filters" id="blogFilters" style="display:none;">
+          <span class="filter-label">Tags:</span>
+          <button class="tag-filter active" data-tag="all">Tat ca</button>
+        </div>
+
+        <div class="blog-grid" id="blogGrid"></div>
+
+        <div class="blog-empty" id="blogEmpty" style="display:none;">
+          <div class="blog-empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <p>Chua co bai viet nao.<br>Nhan nut chinh sua de bat dau viet!</p>
+        </div>
+      </div>
+
+      <!-- Single Post View -->
+      <div class="blog-post-view" id="blogPostView">
+        <button class="back-btn" id="backToList">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Quay lai
+        </button>
+        <h1 class="post-full-title" id="postTitle"></h1>
+        <div class="post-full-meta">
+          <span class="post-date" id="postDate"></span>
+          <span class="post-reading-time" id="postReadingTime"></span>
+        </div>
+        <div class="post-full-tags" id="postTags"></div>
+        <div class="post-content" id="postContent"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="copyright">&copy; 2026 Tuong Nguyen. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Admin Edit Button -->
+  <button class="admin-edit-btn" id="adminEditBtn" aria-label="Quan ly blog">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+  </button>
+
+  <!-- Blog Editor Modal -->
+  <div class="blog-editor-overlay" id="editorOverlay">
+    <div class="blog-editor-panel">
+      <div class="admin-panel-header">
+        <h2>Quan Ly Blog</h2>
+        <button class="admin-close-btn" id="editorCloseBtn" aria-label="Dong">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="editor-tabs">
+        <button class="editor-tab active" data-tab="write">Viet bai</button>
+        <button class="editor-tab" data-tab="posts">Bai viet</button>
+      </div>
+
+      <!-- Write/Edit Form -->
+      <div class="editor-form active" id="editorForm">
+        <input type="hidden" id="editingPostId" value="">
+        <div class="admin-field">
+          <label for="postTitleInput">Tieu de</label>
+          <input type="text" id="postTitleInput" placeholder="Tieu de bai viet...">
+        </div>
+        <div class="admin-field">
+          <label for="postTagsInput">Tags (cach nhau boi dau phay)</label>
+          <input type="text" id="postTagsInput" placeholder="diary, tech, sharing...">
+        </div>
+        <div class="admin-field">
+          <label>Noi dung</label>
+          <div class="editor-toolbar">
+            <button type="button" class="toolbar-btn" data-action="bold" title="Bold"><b>B</b></button>
+            <button type="button" class="toolbar-btn" data-action="italic" title="Italic"><i>I</i></button>
+            <div class="toolbar-sep"></div>
+            <button type="button" class="toolbar-btn" data-action="h2" title="Heading 2">H2</button>
+            <button type="button" class="toolbar-btn" data-action="h3" title="Heading 3">H3</button>
+            <div class="toolbar-sep"></div>
+            <button type="button" class="toolbar-btn" data-action="link" title="Link">Link</button>
+            <button type="button" class="toolbar-btn" data-action="image" title="Image">Img</button>
+            <button type="button" class="toolbar-btn" data-action="quote" title="Quote">Quote</button>
+            <button type="button" class="toolbar-btn" data-action="code" title="Code">Code</button>
+            <div class="toolbar-sep"></div>
+            <button type="button" class="toolbar-btn" data-action="preview" title="Preview">Xem truoc</button>
+          </div>
+          <textarea class="editor-content-input" id="postContentInput" placeholder="Viet noi dung bai viet o day...&#10;&#10;Ho tro dinh dang:&#10;**bold** *italic*&#10;## Heading 2&#10;### Heading 3&#10;[text](url) ![alt](image-url)&#10;> Quote&#10;`code`"></textarea>
+          <div class="editor-preview" id="editorPreview">
+            <div class="post-content" id="previewContent"></div>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <button class="admin-save-btn" id="savePostBtn">Luu bai viet</button>
+          <button class="admin-cancel-btn" id="cancelEditBtn">Huy</button>
+        </div>
+      </div>
+
+      <!-- Posts List -->
+      <div class="editor-posts-list" id="editorPostsList"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Theme Toggle =====
+    const toggle = document.getElementById('themeToggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const stored = localStorage.getItem('theme');
+
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (stored === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    toggle.addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    });
+
+    // ===== Helpers =====
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const months = ['Thg 1','Thg 2','Thg 3','Thg 4','Thg 5','Thg 6','Thg 7','Thg 8','Thg 9','Thg 10','Thg 11','Thg 12'];
+      return d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear();
+    }
+
+    function calculateReadingTime(text) {
+      const words = text.trim().split(/\s+/).length;
+      const mins = Math.max(1, Math.round(words / 200));
+      return mins + ' phut doc';
+    }
+
+    function generateExcerpt(content) {
+      // Strip markdown-like syntax for excerpt
+      const plain = content
+        .replace(/!\[.*?\]\(.*?\)/g, '')
+        .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')
+        .replace(/[*#>`_~]/g, '')
+        .replace(/\n+/g, ' ')
+        .trim();
+      return plain.length > 150 ? plain.substring(0, 150) + '...' : plain;
+    }
+
+    // ===== Markdown-like Rendering =====
+    function renderMarkdown(text) {
+      let html = escapeHTML(text);
+
+      // Code blocks (``` ... ```)
+      html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Images
+      html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
+
+      // Links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+      // Headings
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+      // Blockquotes
+      html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+      // Bold and italic
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+      // Unordered lists
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+      // Paragraphs: split by double newlines
+      html = html.split(/\n{2,}/).map(block => {
+        block = block.trim();
+        if (!block) return '';
+        // Don't wrap blocks that are already wrapped in block elements
+        if (/^<(h[23]|ul|ol|blockquote|pre|img)/.test(block)) return block;
+        // Wrap remaining in paragraphs, convert single newlines to <br>
+        return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+      }).join('\n');
+
+      return html;
+    }
+
+    // ===== Data Layer =====
+    function loadPosts() {
+      try {
+        const saved = localStorage.getItem('blogPosts');
+        return saved ? JSON.parse(saved) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem('blogPosts', JSON.stringify(posts));
+    }
+
+    // ===== Render Blog List =====
+    const blogGrid = document.getElementById('blogGrid');
+    const blogEmpty = document.getElementById('blogEmpty');
+    const blogFilters = document.getElementById('blogFilters');
+    let activeTag = 'all';
+
+    function getAllTags(posts) {
+      const tags = new Set();
+      posts.forEach(p => p.tags.forEach(t => tags.add(t)));
+      return Array.from(tags).sort();
+    }
+
+    function renderFilters(posts) {
+      const tags = getAllTags(posts);
+      if (tags.length === 0) {
+        blogFilters.style.display = 'none';
+        return;
+      }
+      blogFilters.style.display = 'flex';
+      blogFilters.innerHTML = '<span class="filter-label">Tags:</span>' +
+        '<button class="tag-filter' + (activeTag === 'all' ? ' active' : '') + '" data-tag="all">Tat ca</button>' +
+        tags.map(t =>
+          '<button class="tag-filter' + (activeTag === t ? ' active' : '') + '" data-tag="' + escapeHTML(t) + '">' + escapeHTML(t) + '</button>'
+        ).join('');
+
+      blogFilters.querySelectorAll('.tag-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeTag = btn.dataset.tag;
+          renderBlogList();
+        });
+      });
+    }
+
+    function renderBlogList() {
+      const posts = loadPosts().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      renderFilters(posts);
+
+      const filtered = activeTag === 'all' ? posts : posts.filter(p => p.tags.includes(activeTag));
+
+      if (filtered.length === 0) {
+        blogGrid.innerHTML = '';
+        blogEmpty.style.display = 'block';
+        return;
+      }
+
+      blogEmpty.style.display = 'none';
+      blogGrid.innerHTML = filtered.map(post => {
+        const tagsHtml = post.tags.map(t => '<span class="tag-badge">' + escapeHTML(t) + '</span>').join('');
+        return '<article class="post-card" data-id="' + post.id + '">' +
+          '<div class="post-card-meta">' +
+            '<span class="post-date">' + formatDate(post.date) + '</span>' +
+            '<span class="post-reading-time">' + calculateReadingTime(post.content) + '</span>' +
+          '</div>' +
+          '<h2 class="post-card-title">' + escapeHTML(post.title) + '</h2>' +
+          '<p class="post-card-excerpt">' + escapeHTML(post.excerpt) + '</p>' +
+          '<div class="post-card-tags">' + tagsHtml + '</div>' +
+        '</article>';
+      }).join('');
+
+      blogGrid.querySelectorAll('.post-card').forEach(card => {
+        card.addEventListener('click', () => {
+          window.location.hash = 'post-' + card.dataset.id;
+        });
+      });
+    }
+
+    // ===== Render Single Post =====
+    const blogListView = document.getElementById('blogListView');
+    const blogPostView = document.getElementById('blogPostView');
+
+    function showPost(postId) {
+      const posts = loadPosts();
+      const post = posts.find(p => p.id === postId);
+      if (!post) {
+        window.location.hash = '';
+        return;
+      }
+
+      document.getElementById('postTitle').textContent = post.title;
+      document.getElementById('postDate').textContent = formatDate(post.date);
+      document.getElementById('postReadingTime').textContent = calculateReadingTime(post.content);
+      document.getElementById('postTags').innerHTML = post.tags.map(t =>
+        '<span class="tag-badge">' + escapeHTML(t) + '</span>'
+      ).join('');
+      document.getElementById('postContent').innerHTML = renderMarkdown(post.content);
+
+      blogListView.classList.add('hidden');
+      blogPostView.classList.add('active');
+      document.title = post.title + ' | Blog | Tuong Nguyen';
+      window.scrollTo(0, 0);
+    }
+
+    function showList() {
+      blogPostView.classList.remove('active');
+      blogListView.classList.remove('hidden');
+      document.title = 'Blog | Tuong Nguyen';
+      renderBlogList();
+    }
+
+    // ===== Hash Routing =====
+    function handleHash() {
+      const hash = window.location.hash;
+      if (hash.startsWith('#post-')) {
+        showPost(hash.substring(6));
+      } else {
+        showList();
+      }
+    }
+
+    window.addEventListener('hashchange', handleHash);
+
+    document.getElementById('backToList').addEventListener('click', () => {
+      window.location.hash = '';
+    });
+
+    // ===== Editor Logic =====
+    const editorOverlay = document.getElementById('editorOverlay');
+    const editorForm = document.getElementById('editorForm');
+    const editorPostsList = document.getElementById('editorPostsList');
+    let previewMode = false;
+
+    function openEditor() {
+      editorOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      switchTab('write');
+      clearForm();
+    }
+
+    function closeEditor() {
+      editorOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+      previewMode = false;
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.editor-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      if (tab === 'write') {
+        editorForm.classList.add('active');
+        editorPostsList.classList.remove('active');
+      } else {
+        editorForm.classList.remove('active');
+        editorPostsList.classList.add('active');
+        renderEditorPostsList();
+      }
+    }
+
+    function clearForm() {
+      document.getElementById('editingPostId').value = '';
+      document.getElementById('postTitleInput').value = '';
+      document.getElementById('postTagsInput').value = '';
+      document.getElementById('postContentInput').value = '';
+      hidePreview();
+    }
+
+    function hidePreview() {
+      previewMode = false;
+      document.getElementById('postContentInput').style.display = '';
+      document.querySelector('.editor-toolbar').style.display = '';
+      document.getElementById('editorPreview').classList.remove('active');
+    }
+
+    function togglePreview() {
+      previewMode = !previewMode;
+      const textarea = document.getElementById('postContentInput');
+      const toolbar = document.querySelector('.editor-toolbar');
+      const preview = document.getElementById('editorPreview');
+
+      if (previewMode) {
+        document.getElementById('previewContent').innerHTML = renderMarkdown(textarea.value);
+        textarea.style.display = 'none';
+        preview.classList.add('active');
+      } else {
+        textarea.style.display = '';
+        preview.classList.remove('active');
+      }
+    }
+
+    // Toolbar actions
+    function insertAtCursor(textarea, before, after) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = textarea.value.substring(start, end);
+      const replacement = before + (selected || 'text') + (after || '');
+      textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+      textarea.focus();
+      textarea.selectionStart = start + before.length;
+      textarea.selectionEnd = start + before.length + (selected || 'text').length;
+    }
+
+    document.querySelector('.editor-toolbar').addEventListener('click', (e) => {
+      const btn = e.target.closest('.toolbar-btn');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const textarea = document.getElementById('postContentInput');
+
+      switch (action) {
+        case 'bold': insertAtCursor(textarea, '**', '**'); break;
+        case 'italic': insertAtCursor(textarea, '*', '*'); break;
+        case 'h2': insertAtCursor(textarea, '\n## ', '\n'); break;
+        case 'h3': insertAtCursor(textarea, '\n### ', '\n'); break;
+        case 'link': insertAtCursor(textarea, '[', '](url)'); break;
+        case 'image': insertAtCursor(textarea, '![alt](', ')'); break;
+        case 'quote': insertAtCursor(textarea, '\n> ', '\n'); break;
+        case 'code': insertAtCursor(textarea, '`', '`'); break;
+        case 'preview': togglePreview(); break;
+      }
+    });
+
+    // Save post
+    document.getElementById('savePostBtn').addEventListener('click', () => {
+      const title = document.getElementById('postTitleInput').value.trim();
+      const content = document.getElementById('postContentInput').value.trim();
+      const tagsRaw = document.getElementById('postTagsInput').value.trim();
+
+      if (!title || !content) {
+        alert('Vui long nhap tieu de va noi dung!');
+        return;
+      }
+
+      const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+      const posts = loadPosts();
+      const editingId = document.getElementById('editingPostId').value;
+
+      if (editingId) {
+        // Update existing
+        const idx = posts.findIndex(p => p.id === editingId);
+        if (idx !== -1) {
+          posts[idx].title = title;
+          posts[idx].content = content;
+          posts[idx].tags = tags;
+          posts[idx].excerpt = generateExcerpt(content);
+        }
+      } else {
+        // New post
+        posts.push({
+          id: generateId(),
+          title: title,
+          date: new Date().toISOString(),
+          tags: tags,
+          content: content,
+          excerpt: generateExcerpt(content)
+        });
+      }
+
+      savePosts(posts);
+      renderBlogList();
+      clearForm();
+      switchTab('posts');
+    });
+
+    // Cancel edit
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+      clearForm();
+    });
+
+    // Render posts list in editor
+    function renderEditorPostsList() {
+      const posts = loadPosts().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (posts.length === 0) {
+        editorPostsList.innerHTML = '<div class="editor-no-posts">Chua co bai viet nao.</div>';
+        return;
+      }
+
+      editorPostsList.innerHTML = posts.map(post =>
+        '<div class="editor-post-item" data-id="' + post.id + '">' +
+          '<div class="editor-post-item-info">' +
+            '<div class="editor-post-item-title">' + escapeHTML(post.title) + '</div>' +
+            '<div class="editor-post-item-date">' + formatDate(post.date) + '</div>' +
+          '</div>' +
+          '<div class="editor-post-item-actions">' +
+            '<button class="btn-edit-post" data-id="' + post.id + '">Sua</button>' +
+            '<button class="btn-delete-post" data-id="' + post.id + '">Xoa</button>' +
+          '</div>' +
+        '</div>'
+      ).join('');
+
+      editorPostsList.querySelectorAll('.btn-edit-post').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const post = loadPosts().find(p => p.id === btn.dataset.id);
+          if (post) {
+            document.getElementById('editingPostId').value = post.id;
+            document.getElementById('postTitleInput').value = post.title;
+            document.getElementById('postTagsInput').value = post.tags.join(', ');
+            document.getElementById('postContentInput').value = post.content;
+            hidePreview();
+            switchTab('write');
+          }
+        });
+      });
+
+      editorPostsList.querySelectorAll('.btn-delete-post').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm('Xoa bai viet nay?')) {
+            const posts = loadPosts().filter(p => p.id !== btn.dataset.id);
+            savePosts(posts);
+            renderEditorPostsList();
+            renderBlogList();
+          }
+        });
+      });
+    }
+
+    // Editor tab switching
+    document.querySelectorAll('.editor-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // Open/close editor
+    document.getElementById('adminEditBtn').addEventListener('click', openEditor);
+    document.getElementById('editorCloseBtn').addEventListener('click', closeEditor);
+    editorOverlay.addEventListener('click', (e) => {
+      if (e.target === editorOverlay) closeEditor();
+    });
+
+    // Toggle admin button with Ctrl+Shift+E
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        const btn = document.getElementById('adminEditBtn');
+        btn.style.display = btn.style.display === 'flex' ? 'none' : 'flex';
+      }
+    });
+
+    // ===== Init =====
+    handleHash();
+  </script>
+</body>
+</html>
